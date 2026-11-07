@@ -9,7 +9,7 @@ It ships a [Niri](https://niri-wm.github.io/) scrollable-tiling Wayland session 
 - **Niri** Wayland compositor from Fedora with a Nord-flavored KDL configuration
 - **DMS** (Dank Material Shell): panel, spotlight/app launcher (`Mod+Space`), wallpaper rotation, greeter sync
 - **greetd** + **dms-greeter** graphical login
-- **Ghostty** terminal and **COSMIC Files** file manager
+- **Ghostty** terminal
 - **fcitx5** input method (including Hangul)
 - **chezmoi**: user dotfiles auto-applied on first login from [tdesaules/chez-moi](https://github.com/tdesaules/chez-moi)
 - **topgrade** automated updates (rpm-ostree + chezmoi; firmware updates deliberately disabled)

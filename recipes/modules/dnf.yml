@@ -36,7 +36,6 @@ modules:
         - lm_sensors
         - power-profiles-daemon
         - openssl
-        - cosmic-files
         - make
         - gcc
         - gcc-c++
