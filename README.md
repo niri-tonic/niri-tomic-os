@@ -1,4 +1,4 @@
-# niri-tomic-os &nbsp; [![Build distro](https://github.com/tdesaules/niri-tomic-os/actions/workflows/build-distro.yml/badge.svg)](https://github.com/tdesaules/niri-tomic-os/actions/workflows/build-distro.yml)
+# niri-tomic-os &nbsp; [![Build distro](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml/badge.svg)](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml)
 
 **Niri Tonic OS** is a personal immutable [Fedora Atomic](https://fedoraproject.org/atomic-desktops/) desktop image, built with [BlueBuild](https://blue-build.org) on top of the [Universal Blue](https://universal-blue.org/) `base-atomic` image (Fedora 44).
 
@@ -38,7 +38,7 @@ To rebase an existing atomic Fedora installation to the latest build:
 
 - First rebase to the unsigned image, to get the proper signing keys and policies installed:
   ```
-  rpm-ostree rebase ostree-unverified-registry:ghcr.io/tdesaules/niri-tomic-os:latest
+  rpm-ostree rebase ostree-unverified-registry:ghcr.io/niri-tonic/niri-tomic-os:latest
   ```
 - Reboot to complete the rebase:
   ```
@@ -46,7 +46,7 @@ To rebase an existing atomic Fedora installation to the latest build:
   ```
 - Then rebase to the signed image, like so:
   ```
-  rpm-ostree rebase ostree-image-signed:docker://ghcr.io/tdesaules/niri-tomic-os:latest
+  rpm-ostree rebase ostree-image-signed:docker://ghcr.io/niri-tonic/niri-tomic-os:latest
   ```
 - Reboot again to complete the installation
   ```
@@ -54,6 +54,14 @@ To rebase an existing atomic Fedora installation to the latest build:
   ```
 
 The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
+
+### Migrating from the personal namespace
+
+The repository now lives at `niri-tonic/niri-tomic-os`. Existing installations following
+`ghcr.io/tdesaules/niri-tomic-os` do not automatically switch registries after the
+GitHub transfer. Once the new image has been published and is publicly readable,
+follow the rebase steps above to install its signing policy and switch to the new
+signed image. Keep the existing `SIGNING_SECRET` paired with `cosign.pub`.
 
 ## ISO
 
@@ -64,7 +72,7 @@ oras pull ttl.sh/niri-tomic-os-x86_64-$(curl -s https://gist.githubusercontent.c
 oras manifest fetch ttl.sh/niri-tomic-os-x86_64-$(curl -s https://gist.githubusercontent.com/tdesaules/93883cb28c830015a10172604676af73/raw/niri-tomic-os.uuid.json | jq -r '.uuid'):24h
 cosign verify-blob \
   --bundle niri-tomic-os-x86_64.iso.sigstore.json \
-  --certificate-identity "https://github.com/tdesaules/niri-tomic-os/.github/workflows/build-iso.yml@refs/heads/main" \
+  --certificate-identity "https://github.com/niri-tonic/niri-tomic-os/.github/workflows/build-iso.yml@refs/heads/main" \
   --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
   niri-tomic-os-x86_64.iso
 ```
@@ -74,7 +82,7 @@ cosign verify-blob \
 These images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign). You can verify the signature by downloading the `cosign.pub` file from this repo and running the following command:
 
 ```bash
-cosign verify --key cosign.pub ghcr.io/tdesaules/niri-tomic-os
+cosign verify --key cosign.pub ghcr.io/niri-tonic/niri-tomic-os
 ```
 
 ## Repository structure
@@ -93,8 +101,19 @@ cosign verify --key cosign.pub ghcr.io/tdesaules/niri-tomic-os
 
 ## Builds
 
-- `build-distro.yml`: builds and signs the image on every push to `main` touching `recipes/`, `files/` or `cosign.pub`, plus a nightly rebuild, and pushes to `ghcr.io/tdesaules/niri-tomic-os`.
+- `build-distro.yml`: builds and signs the image on every push to `main` touching `recipes/`, `files/` or `cosign.pub`, plus a nightly rebuild, and pushes to `ghcr.io/niri-tonic/niri-tomic-os`.
 - `build-iso.yml`: installer ISO build after each successful image workflow, or manually, signed with Sigstore and pushed to `ttl.sh` (24h TTL).
+
+Both workflows derive the GHCR namespace from the repository owner. After a repository
+transfer, run `Build distro` manually to validate publication in the new namespace;
+documentation-only pushes do not trigger it. Ensure the organization allows package
+creation and that the new GHCR package is public and grants this repository Actions
+access. A successful image build automatically triggers the ISO build.
+
+CI requires the repository secrets `SIGNING_SECRET` and `GIST_TOKEN`, and variables
+`ARCH`, `IMAGE_NAME`, `VERSION`, `VARIANT`, and `GIST_ID`. The ISO discovery gist remains
+under `tdesaules`: `GIST_TOKEN` must retain write access to it. ISO signatures created
+before the transfer use the old repository URL as their certificate identity.
 
 Local build with the [BlueBuild CLI](https://blue-build.org/how-to/build-locally/):
 

@@ -34,7 +34,7 @@ There is no test suite; validation means building the image successfully.
   ```bash
   bluebuild build recipe.yml
   ```
-- CI (`build-distro.yml`) builds on pushes to `main` touching `recipes/`, `files/`, `modules/` or `cosign.pub`, nightly, and on manual dispatch; it signs with cosign and pushes to `ghcr.io/tdesaules/niri-tomic-os`.
+- CI (`build-distro.yml`) builds on pushes to `main` touching `recipes/`, `files/` or `cosign.pub`, nightly, and on manual dispatch; it signs with cosign and pushes to `ghcr.io/niri-tonic/niri-tomic-os`.
 - After editing a Niri KDL config, check syntax against the Niri docs: <https://niri-wm.github.io/niri/>. `dms-greeter` also parses this file (`-C /etc/niri/config.kdl`), so a syntax error breaks the greeter too.
 - For BlueBuild module schemas, refer to <https://blue-build.org/> before adding or editing modules.
 
