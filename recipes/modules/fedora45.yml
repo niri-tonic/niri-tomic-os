@@ -1,0 +1,8 @@
+---
+modules:
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        # greetd's Fedora 45 PAM stack uses this to unlock the oo7 keyring.
+        - pam_oo7

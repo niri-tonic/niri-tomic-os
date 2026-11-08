@@ -2,7 +2,9 @@
 
 ## Project overview
 
-**Niri Tonic OS** (image/repo name: `niri-tomic-os`, hostname: `niritonicos`) is a personal immutable Fedora Atomic desktop image built with [BlueBuild](https://blue-build.org) on top of the Universal Blue `base-atomic` base image (Fedora 44, see `recipes/recipe.yml`). It provides a Niri Wayland session with Dank Material Shell (DMS / Dank Linux), `greetd` + `dms-greeter`, and a Nord theme.
+**Niri Tonic OS** (image/repo name: `niri-tomic-os`, hostname: `niritonicos`) is a personal immutable Fedora Atomic desktop image built with [BlueBuild](https://blue-build.org) on top of the Fedora OSTree Desktops `base-atomic` base image (Fedora 44, see `recipes/recipe.yml`). It provides a Niri Wayland session with Dank Material Shell (DMS / Dank Linux), `greetd` + `dms-greeter`, and a Nord theme.
+
+Fedora 45 qualification uses `recipes/recipe-fedora45.yml`, sharing the production modules and files. The manual `build-fedora45.yml` workflow optionally publishes to the separate `niri-tomic-os-fedora45` package and does not trigger the production ISO workflow. See `docs/fedora45-migration.md` before promoting the candidate.
 
 The build is fully declarative: the image is described by `recipes/recipe.yml` + `recipes/modules/*.yml` (BlueBuild modules) and static files under `files/system/` (copied verbatim to `/`). There are no imperative build scripts in this repository.
 

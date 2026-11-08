@@ -1,6 +1,6 @@
 # niri-tomic-os &nbsp; [![Build distro](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml/badge.svg)](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml)
 
-**Niri Tonic OS** is a personal immutable [Fedora Atomic](https://fedoraproject.org/atomic-desktops/) desktop image, built with [BlueBuild](https://blue-build.org) on top of the [Universal Blue](https://universal-blue.org/) `base-atomic` image (Fedora 44).
+**Niri Tonic OS** is a personal immutable [Fedora Atomic](https://fedoraproject.org/atomic-desktops/) desktop image, built with [BlueBuild](https://blue-build.org) on top of the [Fedora OSTree Desktops](https://quay.io/repository/fedora-ostree-desktops/base-atomic) `base-atomic` image (Fedora 44).
 
 It ships a [Niri](https://niri-wm.github.io/) scrollable-tiling Wayland session powered by [Dank Material Shell (DMS)](https://danklinux.com/), with `greetd` + `dms-greeter` and a full [Nord](https://www.nordtheme.com/) theme.
 
@@ -53,7 +53,16 @@ To rebase an existing atomic Fedora installation to the latest build:
   systemctl reboot
   ```
 
-The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
+The `latest` tag follows the Fedora version specified in `recipes/recipe.yml`.
+Changing that version and publishing the image upgrades machines following this
+tag on their next system update and reboot, including updates staged by Topgrade.
+
+### Fedora 45 migration candidate
+
+Fedora 45 qualification uses `recipes/recipe-fedora45.yml` and the manual
+**Build Fedora 45 candidate** workflow. Publication is opt-in and targets the
+separate `ghcr.io/niri-tonic/niri-tomic-os-fedora45` package. See the
+[qualification and rollback procedure](docs/fedora45-migration.md).
 
 ### Migrating from the personal namespace
 

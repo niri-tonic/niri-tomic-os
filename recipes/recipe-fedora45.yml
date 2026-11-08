@@ -1,0 +1,16 @@
+---
+name: niri-tomic-os-fedora45
+description: Fedora 45 migration candidate for Niri Tonic OS.
+base-image: quay.io/fedora-ostree-desktops/base-atomic
+image-version: 45
+platforms:
+  - linux/amd64
+  - linux/arm64
+modules:
+  - from-file: modules/dnf.yml
+  - from-file: modules/fedora45.yml
+  - from-file: modules/files.yml
+  - from-file: modules/initramfs.yml
+  - from-file: modules/os-release.yml
+  - from-file: modules/signing.yml
+  - from-file: modules/systemd.yml
