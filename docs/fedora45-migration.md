@@ -1,9 +1,10 @@
-# Fedora 45 qualification
+# Fedora 45 migration and qualification
 
-The candidate recipe shares production modules and system files, with an extra
+The production recipe now targets Fedora 45, with an extra
 Fedora 45 module installing `pam_oo7`. The Fedora 45 greetd PAM stack references
 this module, but it was absent from the initial build with weak dependencies
-disabled. Production uses Fedora 44 until qualification is complete.
+disabled. The separate candidate recipe and workflow have been removed.
+Production selection does not imply that the runtime checks below have passed.
 
 ## Local validation — 2026-11-08
 
@@ -32,13 +33,13 @@ unlock/migration, hardware, ISO installation and rollback remain unqualified.
 For a local native AMD64 build:
 
 ```bash
-bluebuild build --build-driver podman --platform linux/amd64 recipes/recipe-fedora45.yml
+bluebuild build --build-driver podman --platform linux/amd64 recipes/recipe.yml
 ```
 
-Use `linux/arm64` on an ARM64 builder. The manual **Build Fedora 45 candidate**
-workflow builds the platforms declared in the recipe. Enable its `push` input
-to publish and sign `ghcr.io/niri-tonic/niri-tomic-os-fedora45` with the existing
-`SIGNING_SECRET`. Ensure the new GHCR package is publicly readable for pilot hosts.
+Use `linux/arm64` on an ARM64 builder. **Build distro** builds the platforms
+declared in the recipe and publishes and signs `ghcr.io/niri-tonic/niri-tomic-os`
+with the existing `SIGNING_SECRET`. It runs on relevant main-branch pushes,
+nightly, or manually. Ensure the GHCR package is publicly readable for pilot hosts.
 
 On SELinux-enforcing hosts, run local Podman builds sequentially, or use separate
 source copies and temporary directories for each architecture. Concurrent builds
@@ -70,17 +71,17 @@ Pause the pilot user's automatic updates while qualifying an exact image:
 systemctl --user mask --now topgrade.timer topgrade.service
 ```
 
-Use the candidate's verified digest rather than its mutable `latest` tag. Inspect
-the pilot's container signature policy first: production policy may authorize
-only the production repository, while the candidate has a different repository
-name. Configure trust for the candidate using the same verified public key and
-the BlueBuild signing procedure before attempting a signed rebase. A candidate
-signed with the same key is not automatically authorized by every existing policy.
+Use the published Fedora 45 image's verified digest rather than its mutable
+`latest` tag. Inspect the pilot's container signature policy first: older hosts
+may authorize only `ghcr.io/tdesaules/niri-tomic-os`. Configure trust for
+`ghcr.io/niri-tonic/niri-tomic-os` using the verified public key and the BlueBuild
+signing procedure before attempting a signed rebase. Signing with the same key
+does not automatically authorize a new repository in every existing policy.
 
 The signed transport, once trust is configured, is:
 
 ```text
-ostree-image-signed:docker://ghcr.io/niri-tonic/niri-tomic-os-fedora45@sha256:DIGEST
+ostree-image-signed:docker://ghcr.io/niri-tonic/niri-tomic-os@sha256:DIGEST
 ```
 
 Rebase with `rpm-ostree rebase` to that reference and reboot. Replace `DIGEST`
@@ -112,17 +113,16 @@ runtime dependency explicitly.
 
 ## ISO qualification
 
-The production ISO workflow consumes production `latest` and `vars.VERSION`.
-It is not triggered by **Build Fedora 45 candidate**. Do not use it as evidence
-that the candidate installs correctly.
+The production ISO workflow consumes production `latest` and `vars.VERSION`,
+which must be 45. It runs after a successful **Build distro** run or manually.
+A successful ISO build alone does not prove that installation works.
 
-Before promotion, qualify a separate installer consuming the recorded candidate
+Qualify an installer consuming the recorded Fedora 45
 digest, with installer version 45 and the intended architecture/variant. The
 current action exposes `image_src` for an exact source reference and `web_ui` for
 Anaconda WebUI. Confirm support in the chosen installer version before enabling
 it. Test boot, partitioning, encryption, account creation, signed installation,
-first reboot and subsequent update. Keep candidate ISO artifacts separate from
-the production discovery gist. Qualify each advertised ISO architecture separately.
+first reboot and subsequent update. Qualify each advertised ISO architecture separately.
 
 ## Rollback
 
@@ -147,15 +147,15 @@ systemctl --user unmask topgrade.timer topgrade.service
 systemctl --user start topgrade.timer
 ```
 
-## Promotion
+## Production rollout
 
 Require successful AMD64/ARM64 builds, runtime qualification, an existing-system
 upgrade and rollback, installer qualification, and several days of pilot use.
 Keep a recoverable signed Fedora 44 image and pinned deployments during rollout.
 
-Changing `recipes/recipe.yml` to 45 will publish through the normal workflow and
-make Fedora 45 available to machines following production `latest`. Coordinate
-the Fedora 45 module inclusion, ISO `VERSION` variable and documentation with that change. A rebuild against
+`recipes/recipe.yml` now selects 45 through the normal workflow. Once published,
+Fedora 45 is available to machines following production `latest`. The Fedora 45
+PAM module is included and the ISO `VERSION` variable must be 45. A rebuild against
 floating repositories is a new artifact: compare and qualify its exact digest
-before treating it as the tested candidate. Recheck production signing policy and
-image identity when moving from the candidate package to the production package.
+before treating it as tested. Hosts following the old personal namespace or
+the `:44` tag require an explicit origin change.
