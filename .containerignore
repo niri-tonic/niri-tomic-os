@@ -1,0 +1,7 @@
+.git
+.build
+*.iso
+*.iso-CHECKSUM
+*.oci.tar
+cosign.key
+cosign.private
