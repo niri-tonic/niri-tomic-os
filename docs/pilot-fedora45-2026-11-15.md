@@ -19,13 +19,13 @@ complete; see [the audit](audit-2026-11-15.md).
 
 The current machine still boots `44.20261028.0` from
 `ghcr.io/tdesaules/niri-tomic-os:44`. Its 16 GiB BIOS GPU reservation is confirmed.
-Rootless Podman already uses SQLite. Dependency resolution of all requested
+Rootless and rootful Podman already use SQLite. Dependency resolution of all requested
 layered packages succeeded in the published Fedora 45 image, without installing
 them. The actual rpm-ostree rebase remains the definitive layering transaction.
 
 The following commands are migration instructions, not commands already executed
-on the host. Save home data, keyrings and container volumes before the pilot.
-Inspect rootful Podman separately if it has workloads.
+on the host. Save home data, keyrings and container volumes before the pilot,
+including both rootless and rootful workloads.
 
 ## Preserve the running deployment
 
