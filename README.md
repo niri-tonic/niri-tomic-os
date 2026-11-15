@@ -25,7 +25,8 @@ Tuned for an **ASUS ProArt PX13 (HN7306)**:
 - AMD Ryzen AI MAX+ 395 (Strix Halo)
 - AMD XDNA NPU
 - AMD Radeon 8060S Graphics
-- 128 GB LPDDR5X (96 GB VRAM + 32 GB RAM)
+- 128 GB shared LPDDR5X; an automatically detected [Strix Halo memory profile](docs/strix-halo-memory.md)
+  combines a 16 GiB BIOS GPU reservation with an 80 GiB dynamic GPU memory ceiling.
 
 Primary use cases: local LLM serving with [Lemonade](https://lemonade-server.ai), gaming with Steam, and Development / DevOps / SRE work.
 

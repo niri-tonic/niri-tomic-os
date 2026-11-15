@@ -1,0 +1,19 @@
+[Unit]
+Description=Configure shared GPU memory for Strix Halo with 128 GiB RAM
+Documentation=https://rocm.docs.amd.com/en/latest/how-to/system-optimization/strixhalo.html
+ConditionArchitecture=x86-64
+ConditionVirtualization=no
+ConditionPathExists=/run/ostree-booted
+After=local-fs.target
+
+[Service]
+Type=oneshot
+# 80 GiB / 4096-byte pages, alongside a 16 GiB BIOS UMA reservation.
+# This is a ceiling, not a memory reservation.
+Environment=TTM_PAGES_LIMIT=20971520
+ExecCondition=/usr/libexec/niri-strix-halo-memory --check-hardware
+ExecStart=/usr/libexec/niri-strix-halo-memory
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target

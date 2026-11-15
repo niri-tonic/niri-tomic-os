@@ -34,6 +34,7 @@ modules:
         - podman-compose
         - distrobox
         - lm_sensors
+        - dmidecode
         - power-profiles-daemon
         - openssl
         - make

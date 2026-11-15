@@ -5,6 +5,7 @@ modules:
       enabled:
         - greetd.service
         - podman.socket
+        - niri-strix-halo-128g-memory.service
     user:
       enabled:
         - dms.service

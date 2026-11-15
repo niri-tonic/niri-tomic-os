@@ -1,0 +1,87 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+check_hardware() {
+    if ! grep -Eiq '^model name[[:space:]]*:[[:space:]]*AMD RYZEN AI MAX\+ 395([[:space:]]|$)' /proc/cpuinfo; then
+        echo 'Skipping GPU memory profile: CPU is not Ryzen AI Max+ 395.'
+        return 1
+    fi
+
+    local device gpu_found=false memory installed_kib
+    for device in /sys/bus/pci/devices/*; do
+        [[ -r "$device/vendor" && -r "$device/device" ]] || continue
+        if [[ "$(cat "$device/vendor")" == 0x1002 && "$(cat "$device/device")" == 0x1586 ]]; then
+            gpu_found=true
+            break
+        fi
+    done
+    if [[ "$gpu_found" != true ]]; then
+        echo 'Skipping GPU memory profile: AMD Strix Halo GPU (1002:1586) not found.'
+        return 1
+    fi
+
+    # SMBIOS reports installed memory, including the BIOS GPU reservation.
+    # MemTotal in /proc/meminfo excludes that reservation and is unsuitable.
+    if ! memory=$(LC_ALL=C dmidecode --type 17); then
+        echo 'Skipping GPU memory profile: cannot read installed memory from SMBIOS.'
+        return 1
+    fi
+    installed_kib=$(awk '
+        $1 == "Size:" {
+            if ($2 == "No" && $3 == "Module" && $4 == "Installed") next
+            if ($2 !~ /^[0-9]+$/) { invalid = 1; next }
+            if ($3 == "kB" || $3 == "KiB") total += $2
+            else if ($3 == "MB" || $3 == "MiB") total += $2 * 1024
+            else if ($3 == "GB" || $3 == "GiB") total += $2 * 1024 * 1024
+            else if ($3 == "TB" || $3 == "TiB") total += $2 * 1024 * 1024 * 1024
+            else invalid = 1
+        }
+        END { if (invalid) print "unknown"; else printf "%.0f\n", total }
+    ' <<< "$memory")
+    if [[ "$installed_kib" != 134217728 ]]; then
+        echo "Skipping GPU memory profile: expected 128 GiB installed RAM, got $installed_kib KiB."
+        return 1
+    fi
+    if [[ "$(getconf PAGE_SIZE)" != 4096 ]]; then
+        echo 'Skipping GPU memory profile: requires 4096-byte pages.'
+        return 1
+    fi
+    echo 'Matched Ryzen AI Max+ 395, Strix Halo GPU and 128 GiB installed RAM.'
+}
+
+if [[ "${1:-}" == --check-hardware ]]; then
+    check_hardware
+    exit $?
+fi
+# Also enforce detection when the helper is invoked directly.
+check_hardware || exit 0
+
+: "${TTM_PAGES_LIMIT:?Set TTM_PAGES_LIMIT in the hardware profile unit}"
+[[ "$TTM_PAGES_LIMIT" =~ ^[1-9][0-9]*$ ]] || {
+    echo 'TTM_PAGES_LIMIT must be a positive page count.' >&2
+    exit 1
+}
+# Query the default deployment, including an already staged update. Do not use
+# /proc/cmdline: it describes the running kernel, not the next deployment.
+current=$(rpm-ostree kargs)
+read -r -a args <<< "$current"
+desired="ttm.pages_limit=$TTM_PAGES_LIMIT"
+existing=()
+for arg in "${args[@]}"; do
+    case "$arg" in
+        ttm.pages_limit|ttm.pages_limit=*) existing+=("$arg") ;;
+    esac
+done
+
+if [[ ${#existing[@]} == 1 && "${existing[0]}" == "$desired" ]]; then
+    echo "Shared GPU memory profile already configured: $desired"
+    exit 0
+fi
+
+# Replace old values in a single transaction, preserving unrelated arguments.
+changes=()
+for arg in "${existing[@]}"; do
+    changes+=("--delete=$arg")
+done
+rpm-ostree kargs "${changes[@]}" "--append=$desired"
+echo 'Shared GPU memory profile staged. Reboot to activate it.'
