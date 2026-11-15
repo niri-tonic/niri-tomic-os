@@ -12,8 +12,10 @@ ghcr.io/niri-tonic/niri-tomic-os@sha256:fb708fbd3a1ec6b7c2e20aedf701326185e0c9a7
 The index contains AMD64 and ARM64. Its signature was verified with this
 repository's `cosign.pub`. AMD64 userspace checks passed for Niri configuration,
 PAM library dependencies, required desktop packages and enabled greeter/GPU
-profile services. The new CI and VM boot/installer qualification are not yet
-complete; see [the audit](audit-2026-11-15.md).
+profile services. A local installer prototype based on the same OS filesystem
+also passed disposable VM installations and BIOS/UEFI boot with greetd/Niri running.
+The new CI, graphical user login, Secure Boot and physical hardware
+qualification remain incomplete; see [the audit](audit-2026-11-15.md).
 
 ## Host readiness
 
