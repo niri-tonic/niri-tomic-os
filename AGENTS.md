@@ -33,10 +33,12 @@ User-side configuration (dotfiles, shell, personal tooling) is NOT part of this 
 There is no test suite; validation means building the image successfully.
 
 - Local build (requires podman/docker and the BlueBuild CLI), from the repo root:
+
   ```bash
   bluebuild build recipe.yml
   ```
-- CI (`build-distro.yml`) builds on pushes to `main` touching `recipes/`, `files/` or `cosign.pub`, nightly, and on manual dispatch; it signs with cosign and pushes to `ghcr.io/niri-tonic/niri-tomic-os`.
+
+- CI (`build-distro.yml`) currently builds on manual dispatch only; it signs with cosign and pushes to `ghcr.io/niri-tonic/niri-tomic-os`. Push-triggered and nightly publication have been retired. Remove this temporary entrypoint when the qualified development/release/maintenance pipeline is activated.
 - After editing a Niri KDL config, check syntax against the Niri docs: <https://niri-wm.github.io/niri/>. `dms-greeter` also parses this file (`-C /etc/niri/config.kdl`), so a syntax error breaks the greeter too.
 - For BlueBuild module schemas, refer to <https://blue-build.org/> before adding or editing modules.
 

@@ -1,17 +1,7 @@
 name: Build distro
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "recipes/**"
-      - "files/**"
-      - "cosign.pub"
-
-  schedule:
-    - cron: "0 0 * * *"
-
+  # Temporary manual entrypoint until the qualified release workflow is active.
   workflow_dispatch:
 
 concurrency:

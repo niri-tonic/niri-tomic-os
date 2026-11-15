@@ -38,19 +38,26 @@ Primary use cases: local LLM serving with [Lemonade](https://lemonade-server.ai)
 To rebase an existing atomic Fedora installation to the latest build:
 
 - First rebase to the unsigned image, to get the proper signing keys and policies installed:
-  ```
+
+  ```bash
   rpm-ostree rebase ostree-unverified-registry:ghcr.io/niri-tonic/niri-tomic-os:latest
   ```
+
 - Reboot to complete the rebase:
-  ```
+
+  ```bash
   systemctl reboot
   ```
+
 - Then rebase to the signed image, like so:
-  ```
+
+  ```bash
   rpm-ostree rebase ostree-image-signed:docker://ghcr.io/niri-tonic/niri-tomic-os:latest
   ```
+
 - Reboot again to complete the installation
-  ```
+
+  ```bash
   systemctl reboot
   ```
 
@@ -97,7 +104,7 @@ cosign verify --key cosign.pub ghcr.io/niri-tonic/niri-tomic-os
 
 ## Repository structure
 
-```
+```text
 ├── recipes/
 │   ├── recipe.yml              # Main image recipe (base image, platforms, modules)
 │   └── modules/                # BlueBuild modules: dnf, files, systemd, signing, ...
@@ -111,7 +118,7 @@ cosign verify --key cosign.pub ghcr.io/niri-tonic/niri-tomic-os
 
 ## Builds
 
-- `build-distro.yml`: builds and signs the image on every push to `main` touching `recipes/`, `files/` or `cosign.pub`, plus a nightly rebuild, and pushes to `ghcr.io/niri-tonic/niri-tomic-os`.
+- `build-distro.yml`: manually builds, signs and publishes the image to `ghcr.io/niri-tonic/niri-tomic-os`. Push-triggered and nightly publication have been retired.
 - `build-iso.yml`: installer ISO build after each successful image workflow, or manually, signed with Sigstore and pushed to `ttl.sh` (24h TTL).
 
 Both workflows derive the GHCR namespace from the repository owner. After a repository
@@ -124,6 +131,11 @@ CI requires the repository secrets `SIGNING_SECRET` and `GIST_TOKEN`, and variab
 `ARCH`, `IMAGE_NAME`, `VERSION`, `VARIANT`, and `GIST_ID`. The ISO discovery gist remains
 under `tdesaules`: `GIST_TOKEN` must retain write access to it. ISO signatures created
 before the transfer use the old repository URL as their certificate identity.
+
+The replacement development/release/maintenance pipeline is being qualified.
+The manual legacy entrypoint will be removed once the exact-artifact release
+workflow and GHCR ISO publication are activated. See the
+[audit status](docs/audit-2026-11-15.md).
 
 Local build with the [BlueBuild CLI](https://blue-build.org/how-to/build-locally/):
 
