@@ -1,0 +1,51 @@
+# The catalog planner enforces bump/no-bump independently of note filtering:
+# feat -> minor; fix/perf -> patch; breaking -> major (minor before 1.0.0).
+# Initial development stays 0.1.0 until explicit first-release selects 1.0.0.
+[changelog]
+header = """# Changelog
+
+All notable changes are documented here using Keep a Changelog.
+
+## [Unreleased]
+
+"""
+body = """
+{% if version %}## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}{% endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {% if commit.breaking %}**BREAKING:** {% endif %}{{ commit.message }}{% if commit.breaking_description %} — {{ commit.breaking_description }}{% endif %}
+{% endfor %}
+{% endfor %}
+{% if version and previous.version %}
+[{{ version }}]: https://github.com/niri-tonic/niri-tomic-os/compare/{{ previous.version }}...{{ version }}
+{% elif version %}
+[{{ version }}]: https://github.com/niri-tonic/niri-tomic-os/releases/tag/{{ version }}
+{% endif %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = true
+tag_pattern = "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+sort_commits = "oldest"
+commit_parsers = [
+  { message = "^[a-z]+\\(security\\)", group = "Security" },
+  { message = "^[a-z]+\\(deprecated\\)", group = "Deprecated" },
+  { message = "^[a-z]+\\(removed\\)", group = "Removed" },
+  { message = "^feat", group = "Added" },
+  { message = "^fix", group = "Fixed" },
+  { message = "^perf", group = "Changed" },
+  { field = "breaking", pattern = "true", group = "Changed" },
+  { message = ".*", skip = true },
+]
+
+[bump]
+initial_tag = "0.1.0"
+features_always_bump_minor = true
+breaking_always_bump_major = false
+custom_minor_increment_regex = "^feat(?:\\([^)]*\\))?:"
+custom_patch_increment_regex = "^(fix|perf)(?:\\([^)]*\\))?:"

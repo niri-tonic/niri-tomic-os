@@ -1,4 +1,4 @@
-# niri-tomic-os &nbsp; [![Build distro](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml/badge.svg)](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/build-distro.yml)
+# niri-tomic-os &nbsp; [![main](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/main.yml/badge.svg)](https://github.com/niri-tonic/niri-tomic-os/actions/workflows/main.yml)
 
 **Niri Tonic OS** is a personal immutable [Fedora Atomic](https://fedoraproject.org/atomic-desktops/) desktop image, built with [BlueBuild](https://blue-build.org) on top of the [Fedora OSTree Desktops](https://quay.io/repository/fedora-ostree-desktops/base-atomic) `base-atomic` image (Fedora 45).
 
@@ -67,8 +67,8 @@ tag on their next system update and reboot, including updates staged by Topgrade
 
 ### Fedora 45 migration
 
-Fedora 45 now uses `recipes/recipe.yml` and the regular **Build distro**
-workflow, publishing to `ghcr.io/niri-tonic/niri-tomic-os`. The separate
+Fedora 45 uses `recipes/recipe.yml` and explicit **release** preparation,
+publishing to `ghcr.io/niri-tonic/niri-tomic-os`. The separate
 candidate recipe and workflow have been removed. See the
 [qualification and rollback procedure](docs/fedora45-migration.md).
 
@@ -82,17 +82,22 @@ signed image. Keep the existing `SIGNING_SECRET` paired with `cosign.pub`.
 
 ## ISO
 
-![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgist.githubusercontent.com%2Ftdesaules%2F93883cb28c830015a10172604676af73%2Fraw%2Fniri-tomic-os.uuid.json&query=%24.uuid&label=uuid&color=blue)
+AMD64 installers are distributed as OCI artifacts in
+`ghcr.io/niri-tonic/niri-tomic-os-iso`. Use the immutable installer reference
+listed in the [release notes](https://github.com/niri-tonic/niri-tomic-os/releases).
+The first release through this pipeline is still awaiting end-to-end validation.
+
+Set `ISO_REFERENCE` to that digest-qualified reference, then download and check:
 
 ```bash
-oras pull ttl.sh/niri-tomic-os-x86_64-$(curl -s https://gist.githubusercontent.com/tdesaules/93883cb28c830015a10172604676af73/raw/niri-tomic-os.uuid.json | jq -r '.uuid'):24h
-oras manifest fetch ttl.sh/niri-tomic-os-x86_64-$(curl -s https://gist.githubusercontent.com/tdesaules/93883cb28c830015a10172604676af73/raw/niri-tomic-os.uuid.json | jq -r '.uuid'):24h
-cosign verify-blob \
-  --bundle niri-tomic-os-x86_64.iso.sigstore.json \
-  --certificate-identity "https://github.com/niri-tonic/niri-tomic-os/.github/workflows/build-iso.yml@refs/heads/main" \
-  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-  niri-tomic-os-x86_64.iso
+oras pull "${ISO_REFERENCE:?Set the immutable installer reference from release notes}"
+sha256sum -c niri-tomic-os-x86_64.iso-CHECKSUM
+cosign verify --key cosign.pub "$ISO_REFERENCE"
 ```
+
+Cosign verifies the OCI artifact manifest. The checksum sidecar verifies the
+downloaded ISO; the accompanying `.build.json` preserves its source binding.
+ARM64 OS images are supported, but ARM64 installer media is not produced.
 
 ## Verification
 
@@ -118,24 +123,23 @@ cosign verify --key cosign.pub ghcr.io/niri-tonic/niri-tomic-os
 
 ## Builds
 
-- `build-distro.yml`: manually builds, signs and publishes the image to `ghcr.io/niri-tonic/niri-tomic-os`. Push-triggered and nightly publication have been retired.
-- `build-iso.yml`: installer ISO build after each successful image workflow, or manually, signed with Sigstore and pushed to `ttl.sh` (24h TTL).
+- `main.yml`: branch-push checks, selected native AMD64/ARM64 builds and tests.
+- `release.yml`: main-only manual preparation, then stable tag verification and
+  GitHub Release publication. Tags retest published artifacts without rebuilding.
+- `maintenance.yml`: scheduled dependency updates, advisory rescans and link
+  checks; main-only manual execution supports a Renovate dry-run.
 
-Both workflows derive the GHCR namespace from the repository owner. After a repository
-transfer, run `Build distro` manually to validate publication in the new namespace;
-documentation-only pushes do not trigger it. Ensure the organization allows package
-creation and that the new GHCR package is public and grants this repository Actions
-access. A successful image build automatically triggers the ISO build.
+Publication is explicit, never nightly. Actions are pinned to the qualified
+[`tdesaules/github-actions` 1.7.3](https://github.com/tdesaules/github-actions/releases/tag/1.7.3)
+catalog. The OS builder uses the approved Atomic-only BuildKit exception; ISO
+construction uses the separate Lorax-only privileged worker.
 
-CI requires the repository secrets `SIGNING_SECRET` and `GIST_TOKEN`, and variables
-`ARCH`, `IMAGE_NAME`, `VERSION`, `VARIANT`, and `GIST_ID`. The ISO discovery gist remains
-under `tdesaules`: `GIST_TOKEN` must retain write access to it. ISO signatures created
-before the transfer use the old repository URL as their certificate identity.
-
-The replacement development/release/maintenance pipeline is being qualified.
-The manual legacy entrypoint will be removed once the exact-artifact release
-workflow and GHCR ISO publication are activated. See the
-[audit status](docs/audit-2026-11-15.md).
+CI uses `vars.BOT_APP_ID` and `secrets.BOT_APP_PRIVATE_KEY` from the shared
+repository-scoped GitHub App, plus `SIGNING_SECRET` paired with `cosign.pub`.
+The job token needs GHCR package access. Both OS and installer packages must be
+public for anonymous installation. Signing and vulnerability reports remain
+advisory, with failures visible; functional and artifact-integrity failures block
+publication. See [release operations](docs/release-ci.md).
 
 Local build with the [BlueBuild CLI](https://blue-build.org/how-to/build-locally/):
 

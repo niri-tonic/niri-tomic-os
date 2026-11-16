@@ -1,0 +1,541 @@
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      first-release:
+        description: Explicitly select the first official 1.0.0 release
+        type: boolean
+        default: false
+  push:
+    tags: ['**']
+permissions:
+  contents: read
+concurrency:
+  group: atomic-release
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    outputs:
+      mode: ${{ steps.plan.outputs.mode }}
+      source_sha: ${{ steps.plan.outputs.source_sha }}
+      version: ${{ steps.plan.outputs.version }}
+      has_lint: ${{ steps.plan.outputs.has_lint }}
+      has_images: ${{ steps.plan.outputs.has_images }}
+      has_tests: ${{ steps.plan.outputs.has_tests }}
+      has_release: ${{ steps.plan.outputs.has_release }}
+      lint_matrix: ${{ steps.plan.outputs.lint_matrix }}
+      build_matrix: ${{ steps.plan.outputs.build_matrix }}
+      test_matrix: ${{ steps.plan.outputs.test_matrix }}
+      plan_artifact: ${{ format('{0}-{1}-{2}', steps.plan.outputs.plan_artifact, github.run_id, github.run_attempt) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: plan
+        uses: tdesaules/github-actions/workflow/plan-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          event: ${{ github.event_name }}
+          ref: ${{ github.ref }}
+          repository: ${{ github.repository }}
+          initial-release: ${{ inputs.first-release || false }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ format('{0}-{1}-{2}', steps.plan.outputs.plan_artifact, github.run_id, github.run_attempt) }}
+          path: .build/plan.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 30
+  lint:
+    needs: check
+    if: ${{ needs.check.result == 'success' && needs.check.outputs.has_lint == 'true' }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.check.outputs.lint_matrix) }}
+    steps:
+      # Tag lint checks final metadata, while image source is its qualified parent.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: matrix.id == 'actionlint'
+        uses: tdesaules/github-actions/lint/actionlint@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ toJSON(matrix.files) }}
+      - if: matrix.id == 'yaml'
+        uses: tdesaules/github-actions/lint/yaml@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ toJSON(matrix.files) }}
+      - if: matrix.id == 'toml'
+        uses: tdesaules/github-actions/lint/toml@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ toJSON(matrix.files) }}
+      - if: matrix.id == 'shellcheck'
+        uses: tdesaules/github-actions/lint/shellcheck@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ toJSON(matrix.files) }}
+      - if: matrix.id == 'markdownlint'
+        uses: tdesaules/github-actions/lint/markdownlint@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ toJSON(matrix.files) }}
+  build:
+    needs: [check, lint]
+    if: >-
+      ${{ !cancelled() && needs.check.result == 'success' &&
+          needs.check.outputs.mode == 'prepare' && needs.check.outputs.has_images == 'true' &&
+          ((needs.check.outputs.has_lint == 'true' && needs.lint.result == 'success') ||
+           (needs.check.outputs.has_lint == 'false' && needs.lint.result == 'skipped')) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 300
+    permissions:
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.check.outputs.build_matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.check.outputs.source_sha }}
+          persist-credentials: false
+      - id: render
+        uses: tdesaules/github-actions/workflow/render-bluebuild@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          directory: .
+          recipe: recipes/recipe.yml
+          output: .build/Containerfile
+          repository: ghcr.io/niri-tonic/niri-tomic-os
+          platform: linux/${{ matrix.arch }}
+      - id: image
+        # Approved Atomic-only BuildKit/socket exception; no registry push.
+        uses: tdesaules/github-actions/workflow/build-atomic-image@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          context: .
+          containerfile: ${{ steps.render.outputs.containerfile }}
+          image: ghcr.io/niri-tonic/niri-tomic-os
+          version: ${{ needs.check.outputs.version }}
+          platform: linux/${{ matrix.arch }}
+          labels: >-
+            {"org.opencontainers.image.revision":"${{ needs.check.outputs.source_sha }}",
+             "org.opencontainers.image.source":"https://github.com/${{ github.repository }}",
+             "org.opencontainers.image.version":"${{ needs.check.outputs.version }}"}
+          output: .build/candidate/image.oci.tar
+      - uses: tdesaules/github-actions/workflow/new-build-receipt@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          archive: .build/candidate/image.oci.tar
+          expected-sha256: ${{ steps.image.outputs.archive-sha256 }}
+          output: .build/candidate/build-receipt.json
+          image: os
+          architecture: ${{ matrix.arch }}
+          revision: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+      - id: iso
+        if: matrix.arch == 'amd64'
+        # Approved same-image privileged Lorax worker; no worker socket/secrets.
+        # The released constructor preserves signed rpm-ostree namespace trust.
+        uses: tdesaules/github-actions/workflow/build-atomic-iso@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          archive: .build/candidate/image.oci.tar
+          sha256: ${{ steps.image.outputs.archive-sha256 }}
+          repository: ghcr.io/niri-tonic/niri-tomic-os
+          revision: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+          output: .build/candidate/niri-tomic-os-x86_64.iso
+      - id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: candidate-os-${{ matrix.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/candidate/
+          include-hidden-files: true
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Confirm uploaded candidate visibility
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          workflow-sha: ${{ github.sha }}
+          max-attempt: ${{ github.run_attempt }}
+          kind: candidate
+          architecture: ${{ matrix.arch }}
+          expected-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          token: ${{ github.token }}
+  test:
+    needs: [check, lint, build]
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    if: >-
+      ${{ !cancelled() && needs.check.result == 'success' &&
+          needs.check.outputs.has_tests == 'true' &&
+          ((needs.check.outputs.has_lint == 'true' && needs.lint.result == 'success') ||
+           (needs.check.outputs.has_lint == 'false' && needs.lint.result == 'skipped')) &&
+          ((needs.check.outputs.has_images == 'true' && needs.build.result == 'success') ||
+           (needs.check.outputs.has_images == 'false' && needs.build.result == 'skipped')) }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.check.outputs.test_matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: candidate
+        if: matrix.source == 'candidate'
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          # The workflow SHA is the tag metadata commit, not the OS source parent.
+          workflow-sha: ${{ github.sha }}
+          max-attempt: ${{ github.run_attempt }}
+          kind: candidate
+          architecture: ${{ matrix.arch }}
+          token: ${{ github.token }}
+      - if: matrix.source == 'candidate'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.candidate.outputs.artifact-id }}
+          path: .build/qualified/${{ matrix.arch }}
+      - id: integrity
+        if: matrix.source == 'candidate'
+        uses: tdesaules/github-actions/workflow/test-build-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          archive: .build/qualified/${{ matrix.arch }}/image.oci.tar
+          receipt: .build/qualified/${{ matrix.arch }}/build-receipt.json
+          image: os
+          architecture: ${{ matrix.arch }}
+          revision: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+      - id: installer
+        if: matrix.source == 'published' && matrix.arch == 'amd64'
+        uses: tdesaules/github-actions/oci/get-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          reference: ${{ matrix.iso }}
+          files: ${{ toJSON(matrix.iso_files) }}
+          # Downloader requires a new directory, before OS archive qualification.
+          output: .build/qualified/amd64
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: qualify
+        uses: tdesaules/github-actions/check/test-atomic-image@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          archive: ${{ matrix.source == 'candidate' && format('.build/qualified/{0}/image.oci.tar', matrix.arch) || '' }}
+          sha256: ${{ steps.integrity.outputs.archive-sha256 }}
+          reference: ${{ matrix.source == 'published' && matrix.digest || '' }}
+          archive-output: .build/qualified/${{ matrix.arch }}/image.oci.tar
+          revision: ${{ needs.check.outputs.source_sha }}
+          architecture: ${{ matrix.arch }}
+          fedora-version: '45'
+          version: ${{ needs.check.outputs.version }}
+          output: .build/qualified/${{ matrix.arch }}/qualification.json
+      - id: media
+        if: matrix.arch == 'amd64'
+        uses: tdesaules/github-actions/check/test-atomic-iso@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          iso: .build/qualified/amd64/${{ matrix.iso_file || 'niri-tomic-os-x86_64.iso' }}
+          receipt: .build/qualified/amd64/${{ matrix.iso_file || 'niri-tomic-os-x86_64.iso' }}.build.json
+          revision: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+          # Tag pulls may reserialize OCI tar bytes: retain the ORIGINAL hash.
+          os-archive-sha256: ${{ matrix.source == 'candidate' && steps.qualify.outputs.sha256 || matrix.os_archive_sha256 }}
+          os-manifest-digest: ${{ steps.qualify.outputs.manifest-digest }}
+          image-name: niri-tomic-os
+          output: .build/qualified/amd64/iso-qualification.json
+      - id: sbom
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/new-sbom@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          source: oci-archive:${{ steps.qualify.outputs.archive }}
+          output: .build/security/sbom.spdx.json
+      - id: verify_os
+        if: matrix.source == 'published'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          image: ${{ matrix.digest }}
+          key: cosign.pub
+          output: .build/security/os-signature.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: verify_iso
+        if: matrix.source == 'published' && matrix.arch == 'amd64'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          image: ${{ matrix.iso }}
+          key: cosign.pub
+          output: .build/security/iso-signature.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - if: ${{ !cancelled() && matrix.source == 'published' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-signatures@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ matrix.digest }}
+          sign-outcome: skipped
+          signed: 'false'
+          verify-outcome: ${{ steps.verify_os.outcome }}
+          report: .build/security/os-signature.json
+          output: .build/security/os-signature-summary.json
+      - if: ${{ !cancelled() && matrix.source == 'published' && matrix.arch == 'amd64' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-signatures@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ matrix.iso }}
+          sign-outcome: skipped
+          signed: 'false'
+          verify-outcome: ${{ steps.verify_iso.outcome }}
+          report: .build/security/iso-signature.json
+          output: .build/security/iso-signature-summary.json
+      - id: scan
+        if: ${{ !cancelled() }}
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          sbom: .build/security/sbom.spdx.json
+          fail-on: none
+          output: .build/security/grype.json
+      - if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-security@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ steps.qualify.outputs.sha256 || format('git:{0}', needs.check.outputs.source_sha) }}
+          sbom-outcome: ${{ steps.sbom.outcome }}
+          scan-outcome: ${{ steps.scan.outcome }}
+          sbom: .build/security/sbom.spdx.json
+          report: .build/security/grype.json
+      - if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-os-${{ matrix.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/security/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Recheck candidate integrity after qualification and scanning
+        if: matrix.source == 'candidate'
+        uses: tdesaules/github-actions/workflow/test-build-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          archive: .build/qualified/${{ matrix.arch }}/image.oci.tar
+          receipt: .build/qualified/${{ matrix.arch }}/build-receipt.json
+          image: os
+          architecture: ${{ matrix.arch }}
+          revision: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+      - id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qualified-os-${{ matrix.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/qualified/${{ matrix.arch }}/
+          include-hidden-files: true
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+      - name: Confirm uploaded qualification visibility
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          workflow-sha: ${{ github.sha }}
+          max-attempt: ${{ github.run_attempt }}
+          kind: qualified
+          architecture: ${{ matrix.arch }}
+          expected-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+          token: ${{ github.token }}
+  release:
+    needs: [check, lint, build, test]
+    if: >-
+      ${{ !cancelled() && needs.check.result == 'success' &&
+          needs.check.outputs.has_release == 'true' &&
+          (needs.check.outputs.mode == 'prepare' || needs.check.outputs.mode == 'publish') &&
+          ((needs.check.outputs.has_lint == 'true' && needs.lint.result == 'success') ||
+           (needs.check.outputs.has_lint == 'false' && needs.lint.result == 'skipped')) &&
+          ((needs.check.outputs.has_images == 'true' && needs.build.result == 'success') ||
+           (needs.check.outputs.has_images == 'false' && needs.build.result == 'skipped')) &&
+          needs.check.outputs.has_tests == 'true' && needs.test.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.check.outputs.plan_artifact }}
+          path: .build
+      - id: qualified_amd64
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          workflow-sha: ${{ github.sha }}
+          max-attempt: ${{ github.run_attempt }}
+          kind: qualified
+          architecture: amd64
+          token: ${{ github.token }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.qualified_amd64.outputs.artifact-id }}
+          path: .build/qualified/amd64
+      - id: qualified_arm64
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          run-id: ${{ github.run_id }}
+          workflow-sha: ${{ github.sha }}
+          max-attempt: ${{ github.run_attempt }}
+          kind: qualified
+          architecture: arm64
+          token: ${{ github.token }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.qualified_arm64.outputs.artifact-id }}
+          path: .build/qualified/arm64
+      - id: app
+        if: needs.check.outputs.mode == 'prepare'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+      - id: complete
+        if: needs.check.outputs.mode == 'prepare'
+        uses: tdesaules/github-actions/check/test-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          qualified-directory: .build/qualified
+          source-sha: ${{ needs.check.outputs.source_sha }}
+          version: ${{ needs.check.outputs.version }}
+      - id: index
+        if: needs.check.outputs.mode == 'prepare'
+        uses: tdesaules/github-actions/oci/merge-image-index@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          sources: '[".build/qualified/amd64/image.oci.tar",".build/qualified/arm64/image.oci.tar"]'
+          destination: docker://ghcr.io/niri-tonic/niri-tomic-os
+          output: .build/published-index.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: iso
+        if: needs.check.outputs.mode == 'prepare'
+        uses: tdesaules/github-actions/oci/publish-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          directory: ${{ steps.complete.outputs.iso_directory }}
+          files: ${{ steps.complete.outputs.iso_files }}
+          reference: ghcr.io/niri-tonic/niri-tomic-os-iso:release-${{ needs.check.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          artifact-type: application/vnd.niri-tonic.installer.v1
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: sign_os
+        if: needs.check.outputs.mode == 'prepare'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/new-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PASSWORD: ''
+        with:
+          image: ${{ steps.index.outputs.image }}
+          key: env://COSIGN_PRIVATE_KEY
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: sign_iso
+        if: needs.check.outputs.mode == 'prepare'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/new-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PASSWORD: ''
+        with:
+          image: ${{ steps.iso.outputs.reference }}
+          key: env://COSIGN_PRIVATE_KEY
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: verify_os
+        if: needs.check.outputs.mode == 'prepare'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          image: ${{ steps.index.outputs.image }}
+          key: cosign.pub
+          output: .build/signatures/os.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - id: verify_iso
+        if: needs.check.outputs.mode == 'prepare'
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-image-signature@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          image: ${{ steps.iso.outputs.reference }}
+          key: cosign.pub
+          output: .build/signatures/iso.json
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - if: ${{ !cancelled() && needs.check.outputs.mode == 'prepare' && steps.index.outcome == 'success' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-signatures@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ steps.index.outputs.image }}
+          sign-outcome: ${{ steps.sign_os.outcome }}
+          signed: ${{ steps.sign_os.outputs.signed || 'false' }}
+          verify-outcome: ${{ steps.verify_os.outcome }}
+          report: .build/signatures/os.json
+          output: .build/signatures/os-summary.json
+      - if: ${{ !cancelled() && needs.check.outputs.mode == 'prepare' && steps.iso.outcome == 'success' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-signatures@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ steps.iso.outputs.reference }}
+          sign-outcome: ${{ steps.sign_iso.outcome }}
+          signed: ${{ steps.sign_iso.outputs.signed || 'false' }}
+          verify-outcome: ${{ steps.verify_iso.outcome }}
+          report: .build/signatures/iso.json
+          output: .build/signatures/iso-summary.json
+      - if: needs.check.outputs.mode == 'prepare'
+        uses: tdesaules/github-actions/workflow/prepare-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          plan: .build/plan.json
+          qualified-directory: .build/qualified
+          source-sha: ${{ needs.check.outputs.source_sha }}
+          repository: ${{ github.repository }}
+          image: ${{ steps.index.outputs.image }}
+          iso: ${{ steps.iso.outputs.reference }}
+          token: ${{ steps.app.outputs.token }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - if: needs.check.outputs.mode == 'publish'
+        uses: tdesaules/github-actions/workflow/publish-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          # Verifies fresh tag evidence before promoting the exact index to 45/latest.
+          qualified-directory: .build/qualified
+          version: ${{ needs.check.outputs.version }}
+          repository: ${{ github.repository }}
+          token: ${{ github.token }}
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ github.token }}
+      - if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: signatures-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/signatures/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 90

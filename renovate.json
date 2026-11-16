@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "enabledManagers": ["github-actions", "dockerfile", "custom.regex"],
+  "dependencyDashboard": true,
+  "automerge": false,
+  "prConcurrentLimit": 3,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^recipes/recipe\\.yml$/"],
+      "matchStrings": ["base-image:\\s*(?<depName>\\S+)\\s+image-version:\\s*(?<currentValue>45)\\b"],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Fedora 45 is an explicit compatibility boundary.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "quay.io/fedora-ostree-desktops/base-atomic",
+        "quay.io/fedora/fedora",
+        "quay.io/fedora/fedora-minimal"
+      ],
+      "allowedVersions": "/^45(?:[.-].*)?$/"
+    },
+    {
+      "description": "Review catalog API, both native platforms and Lorax compatibility.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["tdesaules/github-actions"],
+      "groupName": "qualified CI catalog",
+      "automerge": false
+    }
+  ]
+}

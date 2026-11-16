@@ -4,7 +4,7 @@
 
 **Niri Tonic OS** (image/repo name: `niri-tomic-os`, hostname: `niritonicos`) is a personal immutable Fedora Atomic desktop image built with [BlueBuild](https://blue-build.org) on top of the Fedora OSTree Desktops `base-atomic` base image (Fedora 45, see `recipes/recipe.yml`). It provides a Niri Wayland session with Dank Material Shell (DMS / Dank Linux), `greetd` + `dms-greeter`, and a Nord theme.
 
-Fedora 45 uses the production recipe and `build-distro.yml` workflow, including `recipes/modules/fedora45.yml` for greetd's PAM dependency. The separate candidate recipe and workflow have been removed. See `docs/fedora45-migration.md` for migration and rollback.
+Fedora 45 uses the production recipe and the explicit `release.yml` workflow, including `recipes/modules/fedora45.yml` for greetd's PAM dependency. The separate candidate recipe and workflow have been removed. See `docs/fedora45-migration.md` for migration and rollback, and `docs/release-ci.md` for CI operations.
 
 The build is fully declarative: the image is described by `recipes/recipe.yml` + `recipes/modules/*.yml` (BlueBuild modules) and static files under `files/system/` (copied verbatim to `/`). There are no imperative build scripts in this repository.
 
@@ -30,7 +30,9 @@ User-side configuration (dotfiles, shell, personal tooling) is NOT part of this 
 
 ## Build & validation
 
-There is no test suite; validation means building the image successfully.
+There is no application test suite. CI builds and qualifies exact native images
+using dedicated published catalog actions; release preparation also qualifies
+AMD64 installer media.
 
 - Local build (requires podman/docker and the BlueBuild CLI), from the repo root:
 
@@ -38,7 +40,7 @@ There is no test suite; validation means building the image successfully.
   bluebuild build recipe.yml
   ```
 
-- CI (`build-distro.yml`) currently builds on manual dispatch only; it signs with cosign and pushes to `ghcr.io/niri-tonic/niri-tomic-os`. Push-triggered and nightly publication have been retired. Remove this temporary entrypoint when the qualified development/release/maintenance pipeline is activated.
+- `main.yml` runs branch-push checks and native builds/tests. `release.yml` prepares releases explicitly from `main`, publishes exact qualified artifacts, then verifies tags without rebuilding. `maintenance.yml` handles dependency updates and advisory rescans independently. Production publication is never nightly.
 - After editing a Niri KDL config, check syntax against the Niri docs: <https://niri-wm.github.io/niri/>. `dms-greeter` also parses this file (`-C /etc/niri/config.kdl`), so a syntax error breaks the greeter too.
 - For BlueBuild module schemas, refer to <https://blue-build.org/> before adding or editing modules.
 
@@ -68,5 +70,7 @@ There is no test suite; validation means building the image successfully.
 
 ## CI notes
 
-- `build-distro.yml` — `blue-build/github-action@v1.11`, cosign signing via `SIGNING_SECRET`, push to GHCR.
-- `build-iso.yml` — installer ISO after successful image workflows or manual dispatch, signed with Sigstore, pushed to `ttl.sh` with 24h TTL; the current UUID is published to a gist.
+- Actions are pinned to the published `tdesaules/github-actions` catalog. The Atomic BuildKit action has an explicitly approved runner-socket exception; Lorax has a separate same-image privileged-worker exception. Do not extend either to unrelated operations.
+- OS images support AMD64 and ARM64; installer output supports AMD64 only. OS and installer are published to GHCR with immutable references in release evidence.
+- Use organization `BOT_APP_ID` / `BOT_APP_PRIVATE_KEY` for job-local App tokens and `SIGNING_SECRET` for Cosign. Security findings/errors remain advisory; construction, functional qualification and artifact integrity remain blocking.
+- The first official release requires explicit `first-release`; subsequent versions follow Conventional Commits. See `docs/release-ci.md` for retries and retention.

@@ -1,0 +1,123 @@
+name: maintenance
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Validate App authentication and Renovate extraction without creating updates
+        type: boolean
+        default: true
+  schedule:
+    - cron: '23 6 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: atomic-maintenance
+  cancel-in-progress: false
+jobs:
+  maintenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Main-only routing and Markdown discovery have no registry dependency.
+      - id: plan
+        uses: tdesaules/github-actions/workflow/plan-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          event: ${{ github.event_name }}
+          ref: ${{ github.ref }}
+          repository: ${{ github.repository }}
+          maintenance: 'true'
+      - id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+      - id: renovate
+        uses: tdesaules/github-actions/maintenance/update-dependencies@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          repository: ${{ github.repository }}
+          # Dispatch defaults to dry-run; schedules perform dependency updates.
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run || false }}
+          token: ${{ steps.app.outputs.token }}
+      - id: links
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        uses: tdesaules/github-actions/lint/lychee@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          files: ${{ steps.plan.outputs.markdown-files }}
+      - id: platforms
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        timeout-minutes: 10
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/get-image-platforms@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          image: ghcr.io/niri-tonic/niri-tomic-os:45
+      - id: sbom_amd64
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/new-sbom@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          source: registry:${{ steps.platforms.outputs.image-amd64 }}
+          output: .build/security/amd64/sbom.spdx.json
+      - id: scan_amd64
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          sbom: .build/security/amd64/sbom.spdx.json
+          fail-on: none
+          update-database: 'true'
+          output: .build/security/amd64/grype.json
+      - if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-security@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ steps.platforms.outputs.digest-amd64 || format('git:{0}', github.sha) }}
+          sbom-outcome: ${{ steps.sbom_amd64.outcome }}
+          scan-outcome: ${{ steps.scan_amd64.outcome }}
+          sbom: .build/security/amd64/sbom.spdx.json
+          report: .build/security/amd64/grype.json
+          output: .build/security/amd64/summary.json
+      - id: sbom_arm64
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/new-sbom@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          source: registry:${{ steps.platforms.outputs.image-arm64 }}
+          output: .build/security/arm64/sbom.spdx.json
+      - id: scan_arm64
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        timeout-minutes: 15
+        continue-on-error: true
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          sbom: .build/security/arm64/sbom.spdx.json
+          fail-on: none
+          update-database: 'true'
+          output: .build/security/arm64/grype.json
+      - if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
+        continue-on-error: true
+        uses: tdesaules/github-actions/workflow/summarize-security@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        with:
+          subject: ${{ steps.platforms.outputs.digest-arm64 || format('git:{0}', github.sha) }}
+          sbom-outcome: ${{ steps.sbom_arm64.outcome }}
+          scan-outcome: ${{ steps.scan_arm64.outcome }}
+          sbom: .build/security/arm64/sbom.spdx.json
+          report: .build/security/arm64/grype.json
+          output: .build/security/arm64/summary.json
+      - if: ${{ always() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: maintenance-security-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/security/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 30

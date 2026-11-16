@@ -25,8 +25,11 @@ The local signing module configured the `localhost` image identity; these builds
 were not published or signed for GHCR. Separate single-platform builds replace
 BlueBuild's common local manifest tags, so use the architecture-specific tags or
 the IDs above rather than assuming local `latest` contains both architectures.
-The candidate workflow passed actionlint 1.7.12. Boot, graphical login, keyring
-unlock/migration, hardware, ISO installation and rollback remain unqualified.
+The candidate workflow passed actionlint 1.7.12. Those initial checks did not
+qualify boot, login or installation. Subsequent prototype BIOS/UEFI installation
+and greetd/Niri startup evidence is recorded in the
+[November 15 audit](audit-2026-11-15.md); user login, keyring migration, physical
+hardware and rollback still require pilot qualification.
 
 ## Build
 
@@ -36,10 +39,11 @@ For a local native AMD64 build:
 bluebuild build --build-driver podman --platform linux/amd64 recipes/recipe.yml
 ```
 
-Use `linux/arm64` on an ARM64 builder. **Build distro** builds the platforms
-declared in the recipe and publishes and signs `ghcr.io/niri-tonic/niri-tomic-os`
-with the existing `SIGNING_SECRET`. It runs on relevant main-branch pushes,
-nightly, or manually. Ensure the GHCR package is publicly readable for pilot hosts.
+Use `linux/arm64` on an ARM64 builder. Branch CI qualifies native images without
+production publication. Explicit **release** preparation on `main` builds and
+qualifies both platforms before publishing `ghcr.io/niri-tonic/niri-tomic-os`.
+Cosign uses the existing `SIGNING_SECRET`. Ensure GHCR is publicly readable for
+pilot hosts. See [release operations](release-ci.md).
 
 On SELinux-enforcing hosts, run local Podman builds sequentially, or use separate
 source copies and temporary directories for each architecture. Concurrent builds
@@ -113,16 +117,14 @@ runtime dependency explicitly.
 
 ## ISO qualification
 
-The production ISO workflow consumes production `latest` and `vars.VERSION`,
-which must be 45. It runs after a successful **Build distro** run or manually.
-A successful ISO build alone does not prove that installation works.
+Release preparation constructs the AMD64 installer from its exact source-bound
+OS archive using the published Fedora 45/Lorax action. Media verification compares
+the embedded native manifest and blobs with the qualified OS. Tag verification
+downloads and retests the published installer without rebuilding.
 
-Qualify an installer consuming the recorded Fedora 45
-digest, with installer version 45 and the intended architecture/variant. The
-current action exposes `image_src` for an exact source reference and `web_ui` for
-Anaconda WebUI. Confirm support in the chosen installer version before enabling
-it. Test boot, partitioning, encryption, account creation, signed installation,
-first reboot and subsequent update. Qualify each advertised ISO architecture separately.
+A successful media check alone does not prove that installation works. Test boot,
+partitioning, encryption, account creation, signed installation, first reboot and
+subsequent update. ARM64 OS images are supported; ARM64 ISO output is not advertised.
 
 ## Rollback
 
@@ -155,7 +157,7 @@ Keep a recoverable signed Fedora 44 image and pinned deployments during rollout.
 
 `recipes/recipe.yml` now selects 45 through the normal workflow. Once published,
 Fedora 45 is available to machines following production `latest`. The Fedora 45
-PAM module is included and the ISO `VERSION` variable must be 45. A rebuild against
+PAM module is included and the installer constructor targets Fedora 45. A rebuild against
 floating repositories is a new artifact: compare and qualify its exact digest
 before treating it as tested. Hosts following the old personal namespace or
 the `:44` tag require an explicit origin change.
