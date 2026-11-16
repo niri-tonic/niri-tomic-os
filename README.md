@@ -33,7 +33,7 @@ Primary use cases: local LLM serving with [Lemonade](https://lemonade-server.ai)
 ## Installation
 
 > [!WARNING]
-> [This is an experimental feature](https://www.fedoraproject.org/wiki/Changes/OstreeNativeContainerStable), try at your own discretion.
+> [This is an experimental feature](https://fedoraproject.org/wiki/Changes/OstreeNativeContainerStable), try at your own discretion.
 
 To rebase an existing atomic Fedora installation to the latest build:
 
@@ -141,7 +141,7 @@ public for anonymous installation. Signing and vulnerability reports remain
 advisory, with failures visible; functional and artifact-integrity failures block
 publication. See [release operations](docs/release-ci.md).
 
-Local build with the [BlueBuild CLI](https://blue-build.org/how-to/build-locally/):
+Local build with the [BlueBuild CLI](https://blue-build.org/how-to/local/):
 
 ```bash
 bluebuild build recipe.yml

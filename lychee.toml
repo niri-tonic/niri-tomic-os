@@ -1,0 +1,3 @@
+# Fedora's wiki uses a browser challenge and rejects the hosted link checker.
+# Exclude this exact historical reference rather than accepting all HTTP 403s.
+exclude = ['^https://fedoraproject\.org/wiki/Changes/OstreeNativeContainerStable$']
