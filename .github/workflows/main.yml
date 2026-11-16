@@ -95,6 +95,9 @@ jobs:
           persist-credentials: false
       - id: render
         uses: tdesaules/github-actions/workflow/render-bluebuild@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        env:
+          # Render Docker mount syntax for the downstream BuildKit constructor.
+          BB_BUILD_DRIVER: docker
         with:
           directory: .
           recipe: recipes/recipe.yml
