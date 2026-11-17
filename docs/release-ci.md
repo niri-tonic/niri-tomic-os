@@ -50,6 +50,16 @@ Its [pilot guide](pilot-fedora45-1.0.2.md) records the exact published digests.
   `qualified-os-arm64-44030839334-1` by their original artifact IDs. The annotated
   tag object, GitHub Release ID/body and exact `:45`/`:latest` index remained
   unchanged. This verifies an actual partial retry, not only a mock fixture.
+- Final maintenance
+  [44042546880](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44042546880)
+  passed on the exact 1.0.2 native manifests, including complete SBOMs, Grype and
+  the corrected summaries. Downloaded SBOM checksums matched their bindings.
+  AMD64 covered 1,559/1,559 installed RPMs at 1.711 GiB scanner RSS; ARM64 covered
+  1,548/1,548 at 1.682 GiB. Grype reported 18 Critical/199 High matches on AMD64
+  and 18 Critical/181 High on ARM64. Successful scanning is not vulnerability
+  clearance; findings remain in the advisory artifacts.
+- The final consumer code also passed native development CI in
+  [44042547743](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44042547743).
 
 ## Development
 
