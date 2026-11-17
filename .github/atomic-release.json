@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "version": "1.0.0",
-  "source_sha": "7101ac30c94d2653a203566bc0abe4b9e70af5e9",
-  "image": "ghcr.io/niri-tonic/niri-tomic-os@sha256:740c2a3b0226bec6b41fe7175a267669d7c1a90d9eab43509feace6003f8a09c",
-  "iso": "ghcr.io/niri-tonic/niri-tomic-os-iso@sha256:46709e24ec10f28deb616541db1bac461d752447cb8c40ae786e2a29a4199af0",
+  "version": "1.0.1",
+  "source_sha": "ec5958e292c530e6bcd7f9933a94f825c3e1d36f",
+  "image": "ghcr.io/niri-tonic/niri-tomic-os@sha256:1fb535f94dbf155837371e1169228f4737ff7d9f41e1ac85824d778ac5f99973",
+  "iso": "ghcr.io/niri-tonic/niri-tomic-os-iso@sha256:0485890e4f1b56ceaed4f2a5733ef4a68c9b39302d3ea3c85538a6d1431cc5ca",
   "iso_file": "niri-tomic-os-x86_64.iso",
-  "iso_sha256": "09621cda691841ba852f1f089491c3d9824746c41f6764ecb1b93f953a50df6f",
+  "iso_sha256": "80347d15a8e1a5c88d109d8fca3161ac13a840bacdbcdda3a800f4dfbdddb747",
   "architectures": [
     "amd64",
     "arm64"
@@ -15,22 +15,22 @@
       "schema_version": 1,
       "component": "os",
       "arch": "amd64",
-      "source_sha": "7101ac30c94d2653a203566bc0abe4b9e70af5e9",
-      "version": "1.0.0",
+      "source_sha": "ec5958e292c530e6bcd7f9933a94f825c3e1d36f",
+      "version": "1.0.1",
       "archive": "image.oci.tar",
-      "sha256": "f263f360051808d881c07c95cb3de11b122154397ebc31cb8f8f6417214eddbc",
-      "manifest_digest": "sha256:1cc838c26fdad984969f71c116cafddeca1409094b05f475d14e53aa5365f3fe",
+      "sha256": "ef7e9d94bdeb1763afdf9e890393f16c3a0ede89b5631d8a2a4c14a9f3089f49",
+      "manifest_digest": "sha256:c0d5722462bb5028d429bab168f6803027feeb2a89a441b7c186f25f5880665d",
       "tested": true,
       "qualification": "userspace",
       "boot_tested": false,
-      "run_id": "44011407315",
+      "run_id": "44019128287",
       "run_attempt": "1",
       "checks": {
         "Fedora version": "",
         "GPU helper syntax": "",
         "GPU memory ceiling": "Environment=TTM_PAGES_LIMIT=20971520\n",
         "Niri configuration": "",
-        "PAM dynamic dependencies": "\tlinux-vdso.so.1 (0x00007f2720417000)\n\tlibpam.so.0 =\u003e /lib64/libpam.so.0 (0x00007f2720331000)\n\tlibgcc_s.so.1 =\u003e /lib64/libgcc_s.so.1 (0x00007f2720303000)\n\tlibm.so.6 =\u003e /lib64/libm.so.6 (0x00007f27201e7000)\n\tlibc.so.6 =\u003e /lib64/libc.so.6 (0x00007f271ffe9000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f2720419000)\n\tlibaudit.so.1 =\u003e /lib64/libaudit.so.1 (0x00007f271ffb0000)\n\tlibeconf.so.0 =\u003e /lib64/libeconf.so.0 (0x00007f271ffa0000)\n\tlibcap-ng.so.0 =\u003e /lib64/libcap-ng.so.0 (0x00007f271ff97000)\n",
+        "PAM dynamic dependencies": "\tlinux-vdso.so.1 (0x00007fbfc4340000)\n\tlibpam.so.0 =\u003e /lib64/libpam.so.0 (0x00007fbfc425a000)\n\tlibgcc_s.so.1 =\u003e /lib64/libgcc_s.so.1 (0x00007fbfc422c000)\n\tlibm.so.6 =\u003e /lib64/libm.so.6 (0x00007fbfc4110000)\n\tlibc.so.6 =\u003e /lib64/libc.so.6 (0x00007fbfc3f12000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007fbfc4342000)\n\tlibaudit.so.1 =\u003e /lib64/libaudit.so.1 (0x00007fbfc3ed9000)\n\tlibeconf.so.0 =\u003e /lib64/libeconf.so.0 (0x00007fbfc3ec9000)\n\tlibcap-ng.so.0 =\u003e /lib64/libcap-ng.so.0 (0x00007fbfc3ec0000)\n",
         "desktop and keyring packages": "greetd-0.10.3-12.fc45.x86_64\npam_oo7-0.7.0~beta^1.e91b98a-1.fc45.x86_64\nniri-26.04-2.fc45.x86_64\ndms-2.1.2-1.fc45.x86_64\ndms-greeter-2.1.2-1.fc45.x86_64\nquickshell-0.3.2-4.fc45.x86_64\nmesa-vulkan-drivers-26.2.6-1.fc45.x86_64\n",
         "enabled GPU profile": "enabled\n",
         "enabled greeter": "enabled\n"
@@ -1601,22 +1601,22 @@
       "schema_version": 1,
       "component": "os",
       "arch": "arm64",
-      "source_sha": "7101ac30c94d2653a203566bc0abe4b9e70af5e9",
-      "version": "1.0.0",
+      "source_sha": "ec5958e292c530e6bcd7f9933a94f825c3e1d36f",
+      "version": "1.0.1",
       "archive": "image.oci.tar",
-      "sha256": "d6218773690ece88c041c0400e80f95feaf65c64a2ed2431473c1bdb195c603e",
-      "manifest_digest": "sha256:13168161552a034a690f5ad8ec52929d6968b0e3c077a3116bc8096921bb6e37",
+      "sha256": "9ce96c57bbbe76fff3cec8241861856ff7c3b5aad1563aadc8edb19595284f7b",
+      "manifest_digest": "sha256:1bbfe4d2dac17234b18ed2c042e190bdc1607d11e89b80427f2858047478b29a",
       "tested": true,
       "qualification": "userspace",
       "boot_tested": false,
-      "run_id": "44011407315",
+      "run_id": "44019128287",
       "run_attempt": "1",
       "checks": {
         "Fedora version": "",
         "GPU helper syntax": "",
         "GPU memory ceiling": "Environment=TTM_PAGES_LIMIT=20971520\n",
         "Niri configuration": "",
-        "PAM dynamic dependencies": "\tlinux-vdso.so.1 (0x0000ffed1d496000)\n\tlibpam.so.0 =\u003e /lib64/libpam.so.0 (0x0000ffed1d350000)\n\tlibgcc_s.so.1 =\u003e /lib64/libgcc_s.so.1 (0x0000ffed1d310000)\n\tlibm.so.6 =\u003e /lib64/libm.so.6 (0x0000ffed1d230000)\n\tlibc.so.6 =\u003e /lib64/libc.so.6 (0x0000ffed1d060000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ffed1d450000)\n\tlibaudit.so.1 =\u003e /lib64/libaudit.so.1 (0x0000ffed1d010000)\n\tlibeconf.so.0 =\u003e /lib64/libeconf.so.0 (0x0000ffed1cfe0000)\n\tlibcap-ng.so.0 =\u003e /lib64/libcap-ng.so.0 (0x0000ffed1cfb0000)\n",
+        "PAM dynamic dependencies": "\tlinux-vdso.so.1 (0x0000ffad2780e000)\n\tlibpam.so.0 =\u003e /lib64/libpam.so.0 (0x0000ffad276c0000)\n\tlibgcc_s.so.1 =\u003e /lib64/libgcc_s.so.1 (0x0000ffad27680000)\n\tlibm.so.6 =\u003e /lib64/libm.so.6 (0x0000ffad275a0000)\n\tlibc.so.6 =\u003e /lib64/libc.so.6 (0x0000ffad273d0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ffad277c0000)\n\tlibaudit.so.1 =\u003e /lib64/libaudit.so.1 (0x0000ffad27380000)\n\tlibeconf.so.0 =\u003e /lib64/libeconf.so.0 (0x0000ffad27350000)\n\tlibcap-ng.so.0 =\u003e /lib64/libcap-ng.so.0 (0x0000ffad27320000)\n",
         "desktop and keyring packages": "greetd-0.10.3-12.fc45.aarch64\npam_oo7-0.7.0~beta^1.e91b98a-1.fc45.aarch64\nniri-26.04-2.fc45.aarch64\ndms-2.1.2-1.fc45.aarch64\ndms-greeter-2.1.2-1.fc45.aarch64\nquickshell-0.3.2-4.fc45.aarch64\nmesa-vulkan-drivers-26.2.6-1.fc45.aarch64\n",
         "enabled GPU profile": "enabled\n",
         "enabled greeter": "enabled\n"
@@ -3176,53 +3176,53 @@
       "files": [
         {
           "path": "niri-tomic-os-x86_64.iso",
-          "sha256": "09621cda691841ba852f1f089491c3d9824746c41f6764ecb1b93f953a50df6f",
+          "sha256": "80347d15a8e1a5c88d109d8fca3161ac13a840bacdbcdda3a800f4dfbdddb747",
           "media_type": "application/x-iso9660-image"
         },
         {
           "path": "niri-tomic-os-x86_64.iso-CHECKSUM",
-          "sha256": "5237cbb70c4e2b2348ca4ccc463b1e3a31411220fee542480024a325469baf9a",
+          "sha256": "8cfe44df1831eaa819a91eef935a7c899ffb65151178f6965298cf75a7bfbe1c",
           "media_type": "text/plain"
         },
         {
           "path": "niri-tomic-os-x86_64.iso.build.json",
-          "sha256": "db96bb5bcf56dd96dfc1af653ae466d167a362a038078b5ab0c8d2f0bd1f2b58",
+          "sha256": "bc95c4769b4c895e51441519638733c1a9539faf185a13120fc7ce43906d2b11",
           "media_type": "application/json"
         }
       ],
       "schema_version": 1,
       "component": "iso",
       "arch": "amd64",
-      "source_sha": "7101ac30c94d2653a203566bc0abe4b9e70af5e9",
-      "version": "1.0.0",
+      "source_sha": "ec5958e292c530e6bcd7f9933a94f825c3e1d36f",
+      "version": "1.0.1",
       "archive": "niri-tomic-os-x86_64.iso",
-      "sha256": "09621cda691841ba852f1f089491c3d9824746c41f6764ecb1b93f953a50df6f",
-      "manifest_digest": "sha256:1cc838c26fdad984969f71c116cafddeca1409094b05f475d14e53aa5365f3fe",
-      "os_archive_sha256": "f263f360051808d881c07c95cb3de11b122154397ebc31cb8f8f6417214eddbc",
+      "sha256": "80347d15a8e1a5c88d109d8fca3161ac13a840bacdbcdda3a800f4dfbdddb747",
+      "manifest_digest": "sha256:c0d5722462bb5028d429bab168f6803027feeb2a89a441b7c186f25f5880665d",
+      "os_archive_sha256": "ef7e9d94bdeb1763afdf9e890393f16c3a0ede89b5631d8a2a4c14a9f3089f49",
       "size": 4747362304,
       "tested": true,
       "qualification": "installer-media",
       "boot_tested": false,
-      "run_id": "44011407315",
+      "run_id": "44019128287",
       "run_attempt": "1",
-      "build_run_id": "44011407315",
+      "build_run_id": "44019128287",
       "build_run_attempt": "1"
     }
   },
   "iso_files": [
     {
       "path": "niri-tomic-os-x86_64.iso",
-      "sha256": "09621cda691841ba852f1f089491c3d9824746c41f6764ecb1b93f953a50df6f",
+      "sha256": "80347d15a8e1a5c88d109d8fca3161ac13a840bacdbcdda3a800f4dfbdddb747",
       "media_type": "application/x-iso9660-image"
     },
     {
       "path": "niri-tomic-os-x86_64.iso-CHECKSUM",
-      "sha256": "5237cbb70c4e2b2348ca4ccc463b1e3a31411220fee542480024a325469baf9a",
+      "sha256": "8cfe44df1831eaa819a91eef935a7c899ffb65151178f6965298cf75a7bfbe1c",
       "media_type": "text/plain"
     },
     {
       "path": "niri-tomic-os-x86_64.iso.build.json",
-      "sha256": "db96bb5bcf56dd96dfc1af653ae466d167a362a038078b5ab0c8d2f0bd1f2b58",
+      "sha256": "bc95c4769b4c895e51441519638733c1a9539faf185a13120fc7ce43906d2b11",
       "media_type": "application/json"
     }
   ]
