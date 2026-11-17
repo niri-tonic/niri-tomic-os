@@ -11,6 +11,7 @@ All notable changes are documented here using Keep a Changelog.
 - normalize generated changelog whitespace
 
 [1.0.1]: https://github.com/niri-tonic/niri-tomic-os/compare/1.0.0...1.0.1
+
 ## [1.0.0] - 2026-11-17
 
 ### Added

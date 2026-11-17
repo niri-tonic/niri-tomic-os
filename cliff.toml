@@ -7,7 +7,6 @@ header = """# Changelog
 All notable changes are documented here using Keep a Changelog.
 
 ## [Unreleased]
-
 """
 body = """
 {% if version %}## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}{% endif %}
@@ -23,7 +22,7 @@ body = """
 [{{ version }}]: https://github.com/niri-tonic/niri-tomic-os/releases/tag/{{ version }}
 {% endif %}
 """
-trim = true
+trim = false
 # Keep generated release metadata compatible with Markdown lint on tag runs.
 postprocessors = [{ pattern = '\n{3,}', replace = "\n\n" }]
 
