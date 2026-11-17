@@ -4,6 +4,14 @@ All notable changes are documented here using Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-17
+
+### Fixed
+
+- validate multi-version changelog layout
+
+[1.0.2]: https://github.com/niri-tonic/niri-tomic-os/compare/1.0.1...1.0.2
+
 ## [1.0.1] - 2026-11-17
 
 ### Fixed
