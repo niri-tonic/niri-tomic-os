@@ -85,7 +85,9 @@ signed image. Keep the existing `SIGNING_SECRET` paired with `cosign.pub`.
 AMD64 installers are distributed as OCI artifacts in
 `ghcr.io/niri-tonic/niri-tomic-os-iso`. Use the immutable installer reference
 listed in the [release notes](https://github.com/niri-tonic/niri-tomic-os/releases).
-The first release through this pipeline is still awaiting end-to-end validation.
+The first finalized release is **1.0.2**. Its
+[digest-pinned pilot guide](docs/pilot-fedora45-1.0.2.md) records the verified OS,
+installer and download checksum.
 
 Set `ISO_REFERENCE` to that digest-qualified reference, then download and check:
 

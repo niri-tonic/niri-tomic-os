@@ -1,5 +1,8 @@
 # Fedora 45 pilot — November 15, 2026
 
+This is the historical pre-release pilot record. Use the
+[release 1.0.2 pilot guide](pilot-fedora45-1.0.2.md) for the finalized artifacts.
+
 ## Verified image
 
 The existing production workflow published Fedora `45.20261115.0` from

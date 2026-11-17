@@ -3,8 +3,9 @@
 The workflows use catalog 1.8.0 at
 `211bdb660789b484f8af7d086ad216fad9e4da08`. This includes digest-preserving zstd
 index publication and complete source-bound rootfs SBOM generation.
-The first end-to-end OS release remains to be finalized; catalog qualification
-alone does not prove production installer publication.
+The first finalized OS release is
+[1.0.2](https://github.com/niri-tonic/niri-tomic-os/releases/tag/1.0.2).
+Its [pilot guide](pilot-fedora45-1.0.2.md) records the exact published digests.
 
 ## Observed activation results
 
@@ -27,6 +28,20 @@ alone does not prove production installer publication.
   coverage. The new dedicated `oci/new-atomic-sbom` action verifies native
   manifest and layer hashes, unpacks without running the target OS, and requires
   coverage of the installed RPM inventory before exposing the SBOM.
+- Corrected maintenance
+  [44011407312](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44011407312)
+  passed App authentication, Renovate dry-run, links, complete SBOM generation and
+  Grype for both architectures. Scanner RSS was 1.662 GiB/1.726 GiB; RPM coverage
+  was 1,559/1,559 and 1,548/1,548. The original summary's 32 MiB input cap rejected
+  the complete SBOMs; the raw artifacts and scanner outcomes remained valid.
+- Preparation
+  [44025291332](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44025291332)
+  and tag verification
+  [44030839334](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44030839334)
+  finalized 1.0.2. Earlier 1.0.0/1.0.1 tags remain immutable records of preparations
+  whose tag lint failed; they were not moved to repair generated changelogs.
+- Anonymous full ISO download, all three payload checksums, and both OCI
+  signatures were independently verified for 1.0.2.
 
 ## Development
 

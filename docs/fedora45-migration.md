@@ -5,6 +5,8 @@ Fedora 45 module installing `pam_oo7`. The Fedora 45 greetd PAM stack references
 this module, but it was absent from the initial build with weak dependencies
 disabled. The separate candidate recipe and workflow have been removed.
 Production selection does not imply that the runtime checks below have passed.
+For the finalized release and exact signed rebase reference, use the
+[1.0.2 pilot guide](pilot-fedora45-1.0.2.md).
 
 ## Local validation — 2026-11-08
 
