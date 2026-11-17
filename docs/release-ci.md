@@ -1,10 +1,32 @@
 # Explicit OS and installer releases
 
-The workflows use catalog 1.7.3 at
-`45c9ce9160b50d49a7167543f2286e000656e565`. Its preparation and tag qualification
-succeeded before consumer activation. The first end-to-end OS release remains
-to be exercised; catalog qualification does not prove organization credentials
-or production installer publication.
+The workflows use catalog 1.8.0 at
+`211bdb660789b484f8af7d086ad216fad9e4da08`. This includes digest-preserving zstd
+index publication and complete source-bound rootfs SBOM generation.
+The first end-to-end OS release remains to be finalized; catalog qualification
+alone does not prove production installer publication.
+
+## Observed activation results
+
+- Native OS construction and userspace qualification passed on both architectures
+  in [run 43949628860](https://github.com/niri-tonic/niri-tomic-os/actions/runs/43949628860).
+  BlueBuild rendering must set `BB_BUILD_DRIVER=docker` for BuildKit mount syntax.
+- Organization App token creation and Renovate dependency extraction passed in
+  [dry-run 43949205855](https://github.com/niri-tonic/niri-tomic-os/actions/runs/43949205855).
+  The old documentation links that failed maintenance were subsequently corrected.
+- First release preparation
+  [43953653795](https://github.com/niri-tonic/niri-tomic-os/actions/runs/43953653795)
+  passed OS/installer construction and qualification, then failed while publishing
+  the multi-platform index because Skopeo requested a format conversion under
+  `--preserve-digests`. The release was not finalized. Catalog 1.8.0 declares the
+  zstd capability annotation before hashing its new index, preserving exact
+  native artifacts.
+- Direct image-source Syft scanning exhausted memory before cataloging. Errors
+  remain advisory and are recorded as failures. A complete extracted-rootfs scan
+  passed locally at a 7 GiB scan limit with identical filesystem package/file
+  coverage. The new dedicated `oci/new-atomic-sbom` action verifies native
+  manifest and layer hashes, unpacks without running the target OS, and requires
+  coverage of the installed RPM inventory before exposing the SBOM.
 
 ## Development
 

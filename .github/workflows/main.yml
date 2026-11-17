@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: plan
-        uses: tdesaules/github-actions/workflow/plan-atomic-release@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/plan-atomic-release@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           event: ${{ github.event_name }}
           ref: ${{ github.ref }}
@@ -54,23 +54,23 @@ jobs:
           ref: ${{ needs.check.outputs.source_sha }}
           persist-credentials: false
       - if: matrix.id == 'actionlint'
-        uses: tdesaules/github-actions/lint/actionlint@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/lint/actionlint@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           files: ${{ toJSON(matrix.files) }}
       - if: matrix.id == 'yaml'
-        uses: tdesaules/github-actions/lint/yaml@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/lint/yaml@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           files: ${{ toJSON(matrix.files) }}
       - if: matrix.id == 'toml'
-        uses: tdesaules/github-actions/lint/toml@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/lint/toml@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           files: ${{ toJSON(matrix.files) }}
       - if: matrix.id == 'shellcheck'
-        uses: tdesaules/github-actions/lint/shellcheck@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/lint/shellcheck@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           files: ${{ toJSON(matrix.files) }}
       - if: matrix.id == 'markdownlint'
-        uses: tdesaules/github-actions/lint/markdownlint@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/lint/markdownlint@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           files: ${{ toJSON(matrix.files) }}
   build:
@@ -94,7 +94,7 @@ jobs:
           ref: ${{ needs.check.outputs.source_sha }}
           persist-credentials: false
       - id: render
-        uses: tdesaules/github-actions/workflow/render-bluebuild@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/render-bluebuild@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         env:
           # Render Docker mount syntax for the downstream BuildKit constructor.
           BB_BUILD_DRIVER: docker
@@ -106,7 +106,7 @@ jobs:
           platform: linux/${{ matrix.arch }}
       - id: image
         # Approved Atomic-only BuildKit/socket exception; exports without pushing.
-        uses: tdesaules/github-actions/workflow/build-atomic-image@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/build-atomic-image@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           context: .
           containerfile: ${{ steps.render.outputs.containerfile }}
@@ -118,7 +118,7 @@ jobs:
              "org.opencontainers.image.source":"https://github.com/${{ github.repository }}",
              "org.opencontainers.image.version":"${{ needs.check.outputs.version }}"}
           output: .build/candidate/image.oci.tar
-      - uses: tdesaules/github-actions/workflow/new-build-receipt@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+      - uses: tdesaules/github-actions/workflow/new-build-receipt@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           archive: .build/candidate/image.oci.tar
           expected-sha256: ${{ steps.image.outputs.archive-sha256 }}
@@ -137,7 +137,7 @@ jobs:
           compression-level: 0
           retention-days: 7
       - name: Confirm uploaded candidate is visible before dependent jobs
-        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
@@ -170,7 +170,7 @@ jobs:
           ref: ${{ needs.check.outputs.source_sha }}
           persist-credentials: false
       - id: candidate
-        uses: tdesaules/github-actions/workflow/get-atomic-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/get-atomic-artifact@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
@@ -184,7 +184,7 @@ jobs:
           artifact-ids: ${{ steps.candidate.outputs.artifact-id }}
           path: .build/qualified/${{ matrix.arch }}
       - id: integrity
-        uses: tdesaules/github-actions/workflow/test-build-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/test-build-artifact@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           archive: .build/qualified/${{ matrix.arch }}/image.oci.tar
           receipt: .build/qualified/${{ matrix.arch }}/build-receipt.json
@@ -193,7 +193,7 @@ jobs:
           revision: ${{ needs.check.outputs.source_sha }}
           version: ${{ needs.check.outputs.version }}
       - id: qualify
-        uses: tdesaules/github-actions/check/test-atomic-image@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/check/test-atomic-image@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           archive: .build/qualified/${{ matrix.arch }}/image.oci.tar
           sha256: ${{ steps.integrity.outputs.archive-sha256 }}
@@ -203,24 +203,28 @@ jobs:
           version: ${{ needs.check.outputs.version }}
           output: .build/qualified/${{ matrix.arch }}/qualification.json
       - id: sbom
-        timeout-minutes: 15
+        timeout-minutes: 30
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/new-sbom@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/oci/new-atomic-sbom@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
-          source: oci-archive:${{ steps.qualify.outputs.archive }}
+          archive: ${{ steps.qualify.outputs.archive }}
+          sha256: ${{ steps.qualify.outputs.sha256 }}
+          architecture: ${{ matrix.arch }}
+          revision: ${{ needs.check.outputs.source_sha }}
           output: .build/security/sbom.spdx.json
+          binding: .build/security/sbom.spdx.json.binding.json
       - id: scan
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.sbom.outcome == 'success' }}
         timeout-minutes: 15
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/test-vulnerabilities@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           sbom: .build/security/sbom.spdx.json
           fail-on: none
           output: .build/security/grype.json
       - if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: tdesaules/github-actions/workflow/summarize-security@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/summarize-security@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           subject: ${{ steps.qualify.outputs.sha256 || format('git:{0}', needs.check.outputs.source_sha) }}
           sbom-outcome: ${{ steps.sbom.outcome }}
@@ -237,7 +241,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
       - name: Recheck exact candidate after tests and scans
-        uses: tdesaules/github-actions/workflow/test-build-artifact@45c9ce9160b50d49a7167543f2286e000656e565 # 1.7.3
+        uses: tdesaules/github-actions/workflow/test-build-artifact@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
         with:
           archive: .build/qualified/${{ matrix.arch }}/image.oci.tar
           receipt: .build/qualified/${{ matrix.arch }}/build-receipt.json

@@ -130,7 +130,7 @@ cosign verify --key cosign.pub ghcr.io/niri-tonic/niri-tomic-os
   checks; main-only manual execution supports a Renovate dry-run.
 
 Publication is explicit, never nightly. Actions are pinned to the qualified
-[`tdesaules/github-actions` 1.7.3](https://github.com/tdesaules/github-actions/releases/tag/1.7.3)
+[`tdesaules/github-actions` 1.8.0](https://github.com/tdesaules/github-actions/releases/tag/1.8.0)
 catalog. The OS builder uses the approved Atomic-only BuildKit exception; ISO
 construction uses the separate Lorax-only privileged worker.
 
