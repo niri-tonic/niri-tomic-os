@@ -135,6 +135,8 @@ Publication is explicit, never nightly. Actions are pinned to the qualified
 [`tdesaules/github-actions` 1.8.0](https://github.com/tdesaules/github-actions/releases/tag/1.8.0)
 catalog. The OS builder uses the approved Atomic-only BuildKit exception; ISO
 construction uses the separate Lorax-only privileged worker.
+The security-summary helper is pinned to the qualified 1.8.1 correction for
+complete SBOMs larger than 32 MiB; other action references retain 1.8.0.
 
 CI uses `vars.BOT_APP_ID` and `secrets.BOT_APP_PRIVATE_KEY` from the shared
 repository-scoped GitHub App, plus `SIGNING_SECRET` paired with `cosign.pub`.

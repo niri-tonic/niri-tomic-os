@@ -3,6 +3,8 @@
 The workflows use catalog 1.8.0 at
 `211bdb660789b484f8af7d086ad216fad9e4da08`. This includes digest-preserving zstd
 index publication and complete source-bound rootfs SBOM generation.
+The summary helper uses catalog 1.8.1 at
+`816accfb927cf1da23bbf5be51efa6f0a0639b38` to stream complete large SBOM reports.
 The first finalized OS release is
 [1.0.2](https://github.com/niri-tonic/niri-tomic-os/releases/tag/1.0.2).
 Its [pilot guide](pilot-fedora45-1.0.2.md) records the exact published digests.
@@ -34,6 +36,7 @@ Its [pilot guide](pilot-fedora45-1.0.2.md) records the exact published digests.
   Grype for both architectures. Scanner RSS was 1.662 GiB/1.726 GiB; RPM coverage
   was 1,559/1,559 and 1,548/1,548. The original summary's 32 MiB input cap rejected
   the complete SBOMs; the raw artifacts and scanner outcomes remained valid.
+  Catalog 1.8.1 fixes this summary limit with bounded streaming validation.
 - Preparation
   [44025291332](https://github.com/niri-tonic/niri-tomic-os/actions/runs/44025291332)
   and tag verification
@@ -42,6 +45,11 @@ Its [pilot guide](pilot-fedora45-1.0.2.md) records the exact published digests.
   whose tag lint failed; they were not moved to repair generated changelogs.
 - Anonymous full ISO download, all three payload checksums, and both OCI
   signatures were independently verified for 1.0.2.
+- Attempt 2 of tag run `44030839334` reran the publication job successfully,
+  downloading `qualified-os-amd64-44030839334-1` and
+  `qualified-os-arm64-44030839334-1` by their original artifact IDs. The annotated
+  tag object, GitHub Release ID/body and exact `:45`/`:latest` index remained
+  unchanged. This verifies an actual partial retry, not only a mock fixture.
 
 ## Development
 

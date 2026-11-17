@@ -314,7 +314,7 @@ jobs:
           output: .build/security/grype.json
       - if: ${{ !cancelled() }}
         continue-on-error: true
-        uses: tdesaules/github-actions/workflow/summarize-security@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/workflow/summarize-security@816accfb927cf1da23bbf5be51efa6f0a0639b38 # 1.8.1
         with:
           subject: ${{ steps.qualify.outputs.sha256 || format('git:{0}', needs.check.outputs.source_sha) }}
           sbom-outcome: ${{ steps.sbom.outcome }}
