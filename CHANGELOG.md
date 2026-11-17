@@ -54,7 +54,6 @@ All notable changes are documented here using Keep a Changelog.
 
 - add Strix Halo shared memory profile
 
-
 ### Fixed
 
 - small fix on topgrade timer, change wallpaper rotation timer and clean some logo
@@ -126,7 +125,5 @@ All notable changes are documented here using Keep a Changelog.
 - repair maintenance link checks
 
 - use qualified zstd publication and Atomic SBOM actions
-
-
 
 [1.0.0]: https://github.com/niri-tonic/niri-tomic-os/releases/tag/1.0.0
