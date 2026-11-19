@@ -461,6 +461,16 @@ jobs:
           key: env://COSIGN_PRIVATE_KEY
           registry-username: ${{ github.actor }}
           registry-password: ${{ github.token }}
+      - name: Add rpm-ostree compatible signatures for index and platforms
+        if: needs.check.outputs.mode == 'prepare'
+        continue-on-error: true
+        uses: ./.github/scripts/sign-rpm-ostree
+        with:
+          image: ${{ steps.index.outputs.image }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PASSWORD: ''
+          GITHUB_TOKEN: ${{ github.token }}
       - id: sign_iso
         if: needs.check.outputs.mode == 'prepare'
         timeout-minutes: 10

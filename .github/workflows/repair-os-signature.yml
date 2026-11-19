@@ -1,0 +1,27 @@
+name: Repair 1.0.2 rpm-ostree signature
+on: workflow_dispatch
+permissions:
+  contents: read
+  packages: write
+jobs:
+  repair:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    env:
+      OS_INDEX: ghcr.io/niri-tonic/niri-tomic-os@sha256:e921e3e7a1df53b83bcc50e2e5ca80ef0b60e11212157c4698e2d41fdf5b98fb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify the existing release signature before adding compatibility signatures
+        uses: tdesaules/github-actions/oci/test-image-signature@211bdb660789b484f8af7d086ad216fad9e4da08
+        with:
+          image: ${{ env.OS_INDEX }}
+          key: cosign.pub
+      - uses: ./.github/scripts/sign-rpm-ostree
+        with:
+          image: ${{ env.OS_INDEX }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PASSWORD: ''
+          GITHUB_TOKEN: ${{ github.token }}

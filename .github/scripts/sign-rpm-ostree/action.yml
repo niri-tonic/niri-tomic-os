@@ -1,0 +1,18 @@
+name: Sign OS for rpm-ostree
+description: Publish legacy simple-signing attachments for the OS index and its native manifests
+inputs:
+  image:
+    description: Qualified immutable OS index reference
+    required: true
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - sign
+    - --yes
+    - --recursive
+    - --key=env://COSIGN_PRIVATE_KEY
+    - --new-bundle-format=false
+    - --registry-referrers-mode=legacy
+    - --k8s-keychain
+    - ${{ inputs.image }}
