@@ -12,6 +12,7 @@ runs:
     - --yes
     - --recursive
     - --key=env://COSIGN_PRIVATE_KEY
+    - --use-signing-config=false
     - --new-bundle-format=false
     - --registry-referrers-mode=legacy
     - --k8s-keychain
