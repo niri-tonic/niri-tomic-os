@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
       # Main-only routing and Markdown discovery have no registry dependency.
       - id: plan
-        uses: tdesaules/github-actions/workflow/plan-atomic-release@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/workflow/plan-atomic-release@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           event: ${{ github.event_name }}
           ref: ${{ github.ref }}
@@ -38,7 +38,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
       - id: renovate
-        uses: tdesaules/github-actions/maintenance/update-dependencies@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/maintenance/update-dependencies@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           repository: ${{ github.repository }}
           # Dispatch defaults to dry-run; schedules perform dependency updates.
@@ -46,7 +46,7 @@ jobs:
           token: ${{ steps.app.outputs.token }}
       - id: links
         if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
-        uses: tdesaules/github-actions/lint/lychee@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/lint/lychee@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           files: ${{ steps.plan.outputs.markdown-files }}
           config: lychee.toml
@@ -54,14 +54,14 @@ jobs:
         if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
         timeout-minutes: 10
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/get-image-platforms@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/oci/get-image-platforms@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           image: ghcr.io/niri-tonic/niri-tomic-os:45
       - id: sbom_amd64
         if: ${{ !cancelled() && steps.plan.outcome == 'success' && steps.platforms.outcome == 'success' }}
         timeout-minutes: 30
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/new-atomic-sbom@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/oci/new-atomic-sbom@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           reference: ${{ steps.platforms.outputs.image-amd64 }}
           architecture: amd64
@@ -71,7 +71,7 @@ jobs:
         if: ${{ !cancelled() && steps.plan.outcome == 'success' && steps.sbom_amd64.outcome == 'success' }}
         timeout-minutes: 15
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/test-vulnerabilities@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           sbom: .build/security/amd64/sbom.spdx.json
           fail-on: none
@@ -79,7 +79,7 @@ jobs:
           output: .build/security/amd64/grype.json
       - if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
         continue-on-error: true
-        uses: tdesaules/github-actions/workflow/summarize-security@816accfb927cf1da23bbf5be51efa6f0a0639b38 # 1.8.1
+        uses: tdesaules/github-actions/workflow/summarize-security@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           subject: ${{ steps.platforms.outputs.digest-amd64 || format('git:{0}', github.sha) }}
           sbom-outcome: ${{ steps.sbom_amd64.outcome }}
@@ -91,7 +91,7 @@ jobs:
         if: ${{ !cancelled() && steps.plan.outcome == 'success' && steps.platforms.outcome == 'success' }}
         timeout-minutes: 30
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/new-atomic-sbom@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/oci/new-atomic-sbom@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           reference: ${{ steps.platforms.outputs.image-arm64 }}
           architecture: arm64
@@ -101,7 +101,7 @@ jobs:
         if: ${{ !cancelled() && steps.plan.outcome == 'success' && steps.sbom_arm64.outcome == 'success' }}
         timeout-minutes: 15
         continue-on-error: true
-        uses: tdesaules/github-actions/oci/test-vulnerabilities@211bdb660789b484f8af7d086ad216fad9e4da08 # 1.8.0
+        uses: tdesaules/github-actions/oci/test-vulnerabilities@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           sbom: .build/security/arm64/sbom.spdx.json
           fail-on: none
@@ -109,7 +109,7 @@ jobs:
           output: .build/security/arm64/grype.json
       - if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
         continue-on-error: true
-        uses: tdesaules/github-actions/workflow/summarize-security@816accfb927cf1da23bbf5be51efa6f0a0639b38 # 1.8.1
+        uses: tdesaules/github-actions/workflow/summarize-security@be037a8ee89b4431dde66fe72c482b5e9c66d137 # 1.9.0
         with:
           subject: ${{ steps.platforms.outputs.digest-arm64 || format('git:{0}', github.sha) }}
           sbom-outcome: ${{ steps.sbom_arm64.outcome }}
